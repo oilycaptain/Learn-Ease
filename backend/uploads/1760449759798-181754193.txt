@@ -1,0 +1,16 @@
+Grade 9 Mathematics Reviewer
+
+I. Algebra
+- Polynomial: an expression consisting of variables and coefficients.
+- Factoring: reversing multiplication (e.g., x² + 5x + 6 = (x + 2)(x + 3)).
+- Quadratic Formula: x = (-b ± √(b² - 4ac)) / 2a.
+
+II. Geometry
+- Pythagorean Theorem: a² + b² = c² for right triangles.
+- Perimeter and area formulas vary depending on the shape.
+- Volume = base area × height.
+
+III. Statistics
+- Mean = sum of data ÷ number of data points.
+- Median is the middle value; Mode is the most frequent.
+- Probability = favorable outcomes ÷ total outcomes.
