@@ -1,71 +1,64 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const META = [
+  { match: /^\/dashboard/,       title: 'Overview',        subtitle: 'Welcome to your learning dashboard' },
+  { match: /^\/study-materials/, title: 'Study Materials', subtitle: 'Manage your study materials and notes' },
+  { match: /^\/quizzes/,         title: 'Quizzes',         subtitle: 'Take quizzes and track your progress' },
+  { match: /^\/analytics/,       title: 'Analytics',       subtitle: 'View your learning analytics and insights' },
+  { match: /^\/ask-ai/,          title: 'Ask AI',          subtitle: 'Get AI-powered answers and explanations' },
+  { match: /^\/settings/,        title: 'Settings',        subtitle: 'Manage your account and preferences' },
+];
+
+function usePageMeta(pathname) {
+  for (const m of META) if (m.match.test(pathname)) return m;
+  return META[0];
+}
+
 const Navbar = () => {
-  const { user, logout } = useAuth();
-  const location = useLocation();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { title, subtitle } = usePageMeta(pathname);
+
+  const handleLogout = async () => {
+    try { await logout(); } finally { navigate('/login'); }
+  };
 
   return (
-    <nav className="bg-white shadow-lg border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">LE</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              LearnEase
-            </span>
-          </Link>
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div className="flex items-center justify-between px-6 py-4">
+        {/* Left: Title + Subtitle */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+          <p className="text-sm text-gray-600">{subtitle}</p>
+        </div>
 
-          <div className="flex items-center space-x-4">
-            {user ? (
-              <>
-                <Link 
-                  to="/dashboard" 
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    location.pathname === '/dashboard' 
-                      ? 'bg-blue-500 text-white shadow-lg' 
-                      : 'text-gray-600 hover:text-blue-500 hover:bg-blue-50'
-                  }`}
-                >
-                  Dashboard
-                </Link>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-gray-700 font-medium">Welcome, {user.username}</span>
-                  <button 
-                    onClick={logout}
-                    className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-200 hover:scale-105"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <Link 
-                  to="/login" 
-                  className="px-6 py-2 text-gray-600 font-medium hover:text-blue-500 transition-colors duration-200"
-                >
-                  Login
-                </Link>
-                <Link 
-                  to="/signup" 
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-200 hover:scale-105"
-                >
-                  Get Started
-                </Link>
-              </div>
-            )}
+        {/* Right: Search / Bell / Divider / Logout */}
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search notes, quizzes..."
+              className="w-72 px-4 py-2 pl-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
           </div>
+
+          <button className="relative p-2 rounded-xl hover:bg-gray-100 transition-colors" title="Notifications" aria-label="Notifications">
+            <span className="text-lg">🔔</span>
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+          </button>
+
+          <span className="w-px h-6 bg-gray-200" />
+
+          <button onClick={handleLogout} className="text-gray-700 hover:underline">
+            Logout
+          </button>
         </div>
       </div>
-    </nav>
+    </header>
   );
 };
 

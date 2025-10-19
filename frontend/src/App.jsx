@@ -1,58 +1,41 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
+
 import Home from './pages/Home';
 import Login from './components/Login';
 import Signup from './components/Signup';
+
+import DashboardLayout from './layouts/DashboardLayout.jsx';
 import Dashboard from './pages/Dashboard';
-import AskAI from './pages/AskAI'; // Add this import
 import StudyMaterials from './pages/StudyMaterials';
+import AskAI from './pages/AskAI';
 import Quizzes from './pages/Quizzes';
-import QuizPage from './pages/QuizPage';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
 
 function App() {
   const { user } = useAuth();
 
   return (
     <Router>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-        <Navbar />
-        <main>
-          <Routes>
-            <Route 
-  path="/quizzes" 
-  element={user ? <Quizzes /> : <Navigate to="/login" />} 
-/>
-<Route 
-  path="/quiz/:id" 
-  element={user ? <QuizPage /> : <Navigate to="/login" />} 
-/>
-            <Route path="/" element={<Home />} />
-            <Route 
-              path="/login" 
-              element={!user ? <Login /> : <Navigate to="/dashboard" />} 
-            />
-            <Route 
-              path="/signup" 
-              element={!user ? <Signup /> : <Navigate to="/dashboard" />} 
-            />
-            <Route 
-              path="/dashboard" 
-              element={user ? <Dashboard /> : <Navigate to="/login" />} 
-            />
-            {/* Add AskAI route */}
-            <Route 
-              path="/ask-ai" 
-              element={user ? <AskAI /> : <Navigate to="/login" />} 
-            />
-            <Route 
-  path="/study-materials" 
-  element={user ? <StudyMaterials /> : <Navigate to="/login" />} 
-/>
-          </Routes>
-        </main>
-      </div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
+
+        {/* All authed pages share global Navbar + Sidebar */}
+        <Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/study-materials" element={<StudyMaterials />} />
+          <Route path="/ask-ai" element={<AskAI />} />
+          <Route path="/quizzes" element={<Quizzes />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </Router>
   );
 }

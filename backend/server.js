@@ -1,36 +1,68 @@
+// backend/server.js
 const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
-const chatRoutes = require('./routes/chat');
-const fileRoutes = require('./routes/files'); // Make sure this line exists
-const quizRoutes = require('./routes/quizzes');
+
+// Try to mount optional routes only if they exist
+let chatRoutes = null;
+let fileRoutes = null;
+try { chatRoutes = require('./routes/chat'); } catch {}
+try { fileRoutes = require('./routes/files'); } catch {}
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Make sure this line exists
+/**
+ * DEV-FRIENDLY UNIVERSAL CORS
+ * - Reflects the requesting Origin (e.g., http://localhost:5173)
+ * - Allows credentials (Authorization header / cookies)
+ * - Handles preflight (OPTIONS) for every route BEFORE anything else
+ */
+const allowOrigin = (origin) => {
+  if (!origin) return true; // tools like curl/postman
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true;
+  if (process.env.CLIENT_URL && origin === process.env.CLIENT_URL) return true;
+  return true; // relax for dev; lock down later if needed
+};
 
-// Routes
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowOrigin(origin)) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Vary', 'Origin'); // avoid cache poisoning by proxies/CDNs
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  }
+  if (req.method === 'OPTIONS') {
+    // Preflight request — respond immediately with no body
+    return res.sendStatus(204);
+  }
+  next();
+});
+
+// Body parser
+app.use(express.json({ limit: '2mb' }));
+
+// API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/files', fileRoutes); // Make sure this line exists
-app.use('/api/quizzes', quizRoutes);
+if (chatRoutes) app.use('/api/chat', chatRoutes);
+if (fileRoutes) app.use('/api/files', fileRoutes);
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/learnease', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.log(err));
+// Health check
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+// Serve frontend in production (optional)
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '..', 'frontend', 'dist');
+  app.use(express.static(clientBuildPath));
+  app.get('*', (_req, res) => res.sendFile(path.join(clientBuildPath, 'index.html')));
+}
+
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 });
