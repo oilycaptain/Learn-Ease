@@ -46,9 +46,13 @@ const timeAgo = (date) => {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    notesUploaded: 0,
+    questionsAsked: 0,
+    reviewersGenerated: 0,
+    quizzesTaken: 0
+  });
   const [recentActivity, setRecentActivity] = useState([]);
-  const [quizzesTaken, setQuizzesTaken] = useState(0); // NEW STATE
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,29 +60,25 @@ const Dashboard = () => {
       setLoading(true);
       try {
         // Fetch files, chats, and quizzes in parallel
-        const [filesResponse, chatsResponse, quizzesResponse] = await Promise.all([
+        const [filesRes, chatsRes, quizzesRes] = await Promise.all([
           api.get('/files'),
           api.get('/chat'),
-          api.get('/quiz/taken') // FETCH QUIZZES TAKEN
+          api.get('/quiz/taken')
         ]);
 
-        const files = filesResponse.data || [];
-        const chats = chatsResponse.data || [];
-        const quizzes = quizzesResponse.data?.quizzes || [];
+        const files = filesRes.data || [];
+        const chats = chatsRes.data || [];
+        const quizzes = quizzesRes.data?.quizzes || [];
 
-        // Calculate stats
-        const notesUploaded = files.length;
-        const questionsAsked = chats.length;
-        const reviewersGenerated = files.filter(f => f.summary).length;
-        setQuizzesTaken(quizzes.length); // UPDATE QUIZZES TAKEN COUNT
-
+        // Update stats
         setStats({
-          notesUploaded,
-          questionsAsked,
-          reviewersGenerated
+          notesUploaded: files.length,
+          questionsAsked: chats.length,
+          reviewersGenerated: files.filter(f => f.summary).length,
+          quizzesTaken: quizzes.length
         });
 
-        // Combine and sort recent activity (files + chats)
+        // Combine recent activity
         const fileActivity = files.map(file => ({
           type: 'file',
           icon: <DocumentTextIcon />,
@@ -104,8 +104,9 @@ const Dashboard = () => {
           .slice(0, 5);
 
         setRecentActivity(combinedActivity);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
+
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
       } finally {
         setLoading(false);
       }
@@ -115,11 +116,12 @@ const Dashboard = () => {
   }, []);
 
   const statCards = [
-    { label: "Notes Uploaded", value: stats?.notesUploaded, icon: <DocumentTextIcon />, color: "text-green-500", bgColor: "bg-green-50" },
-    { label: "AI Chats Started", value: stats?.questionsAsked, icon: <QuestionMarkCircleIcon />, color: "text-purple-500", bgColor: "bg-purple-50" },
-    { label: "Reviewers Generated", value: stats?.reviewersGenerated, icon: <SparklesIcon />, color: "text-blue-500", bgColor: "bg-blue-50" },
-    { label: "Quizzes Taken", value: quizzesTaken, icon: <ChartBarIcon />, color: "text-orange-500", bgColor: "bg-orange-50" }, // NOW DYNAMIC
+    { label: "Notes Uploaded", value: stats.notesUploaded, icon: <DocumentTextIcon />, color: "text-green-500", bgColor: "bg-green-50" },
+    { label: "AI Chats Started", value: stats.questionsAsked, icon: <QuestionMarkCircleIcon />, color: "text-purple-500", bgColor: "bg-purple-50" },
+    { label: "Reviewers Generated", value: stats.reviewersGenerated, icon: <SparklesIcon />, color: "text-blue-500", bgColor: "bg-blue-50" },
+    { label: "Quizzes Taken", value: stats?.quizzesTaken || 0, icon: <ChartBarIcon />, color: "text-orange-500", bgColor: "bg-orange-50" },
   ];
+
 
   const quickActions = [
     { title: "Upload Notes", icon: <DocumentTextIcon />, to: "/study-materials" },
@@ -192,7 +194,7 @@ const Dashboard = () => {
                 ))
               ) : (
                 <div className="text-center py-10">
-                    <p className="text-gray-500">No recent activity. Upload a file or start a chat!</p>
+                    <p className="text-gray-500">No recent activity. Upload a file, start a chat, or take a quiz!</p>
                 </div>
               )}
             </div>
@@ -234,4 +236,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
