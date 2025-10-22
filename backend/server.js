@@ -45,6 +45,8 @@ app.use((req, res, next) => {
 
 // Body parser
 app.use(express.json({ limit: '2mb' }));
+// Serve uploaded files publicly
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
