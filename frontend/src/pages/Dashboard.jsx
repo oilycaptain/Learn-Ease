@@ -48,33 +48,37 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [quizzesTaken, setQuizzesTaken] = useState(0); // NEW STATE
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // Fetch files and chats in parallel
-        const [filesResponse, chatsResponse] = await Promise.all([
+        // Fetch files, chats, and quizzes in parallel
+        const [filesResponse, chatsResponse, quizzesResponse] = await Promise.all([
           api.get('/files'),
-          api.get('/chat')
+          api.get('/chat'),
+          api.get('/quiz/taken') // FETCH QUIZZES TAKEN
         ]);
 
         const files = filesResponse.data || [];
         const chats = chatsResponse.data || [];
+        const quizzes = quizzesResponse.data?.quizzes || [];
 
         // Calculate stats
         const notesUploaded = files.length;
         const questionsAsked = chats.length;
         const reviewersGenerated = files.filter(f => f.summary).length;
-        
+        setQuizzesTaken(quizzes.length); // UPDATE QUIZZES TAKEN COUNT
+
         setStats({
-            notesUploaded,
-            questionsAsked,
-            reviewersGenerated
+          notesUploaded,
+          questionsAsked,
+          reviewersGenerated
         });
 
-        // Combine and sort recent activity
+        // Combine and sort recent activity (files + chats)
         const fileActivity = files.map(file => ({
           type: 'file',
           icon: <DocumentTextIcon />,
@@ -96,14 +100,12 @@ const Dashboard = () => {
         }));
 
         const combinedActivity = [...fileActivity, ...chatActivity]
-          .sort((a, b) => b.date - a.date) // Sort by most recent
-          .slice(0, 5); // Get top 5 recent activities
+          .sort((a, b) => b.date - a.date)
+          .slice(0, 5);
 
         setRecentActivity(combinedActivity);
-
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
-        // Handle error state if needed
       } finally {
         setLoading(false);
       }
@@ -116,7 +118,7 @@ const Dashboard = () => {
     { label: "Notes Uploaded", value: stats?.notesUploaded, icon: <DocumentTextIcon />, color: "text-green-500", bgColor: "bg-green-50" },
     { label: "AI Chats Started", value: stats?.questionsAsked, icon: <QuestionMarkCircleIcon />, color: "text-purple-500", bgColor: "bg-purple-50" },
     { label: "Reviewers Generated", value: stats?.reviewersGenerated, icon: <SparklesIcon />, color: "text-blue-500", bgColor: "bg-blue-50" },
-    { label: "Quizzes Taken", value: "0", icon: <ChartBarIcon />, color: "text-orange-500", bgColor: "bg-orange-50" }, // Placeholder for future feature
+    { label: "Quizzes Taken", value: quizzesTaken, icon: <ChartBarIcon />, color: "text-orange-500", bgColor: "bg-orange-50" }, // NOW DYNAMIC
   ];
 
   const quickActions = [
