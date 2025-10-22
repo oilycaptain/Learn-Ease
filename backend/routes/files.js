@@ -52,11 +52,10 @@ const extractTextFromFile = async (filePath, fileType) => {
       case 'docx':
         return await extractTextFromDOCX(filePath);
       case 'doc':
-        return await extractTextFromDOCX(filePath); // mammoth can handle .doc in some cases
+        return await extractTextFromDOCX(filePath);
       case 'txt':
         return await extractTextFromTXT(filePath);
       case 'pptx':
-        // PPTX extraction is more complex - for now return basic info
         return 'PPTX file detected. Content extraction for PowerPoint files requires additional libraries.';
       default:
         return 'File type not supported for text extraction.';
@@ -103,12 +102,10 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
 
     const fileType = path.extname(req.file.originalname).toLowerCase().replace('.', '');
     
-    // Extract text from the uploaded file
     let extractedText = '';
     try {
       extractedText = await extractTextFromFile(req.file.path, fileType);
       
-      // Limit extracted text to avoid overwhelming the AI (first 10,000 characters)
       if (extractedText.length > 10000) {
         extractedText = extractedText.substring(0, 10000) + '\n\n... [Content truncated for preview]';
       }
@@ -141,12 +138,20 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
   }
 });
 
-// Get user's files
+// Get user's files - WITH DEBUGGING
 router.get('/', authMiddleware, async (req, res) => {
   try {
+    console.log('📂 GET /api/files called');
+    console.log('👤 User ID:', req.user._id);
+    
     const files = await File.find({ user: req.user._id }).sort({ uploadDate: -1 });
+    
+    console.log(`✅ Found ${files.length} files for user`);
+    console.log('📄 Files:', files.map(f => ({ id: f._id, name: f.originalName })));
+    
     res.json(files);
   } catch (error) {
+    console.error('❌ Error fetching files:', error);
     res.status(500).json({ message: 'Error fetching files', error: error.message });
   }
 });
@@ -243,20 +248,16 @@ router.post('/:id/generate-reviewer', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'File not found' });
     }
 
-    // Prepare content for AI analysis
     let contentForAI = '';
     
     if (file.extractedText && file.extractedText.length > 100) {
-      // Use actual extracted content
       contentForAI = `STUDY MATERIAL CONTENT:
-${file.extractedText.substring(0, 8000)}`; // Limit content size
+${file.extractedText.substring(0, 8000)}`;
     } else {
-      // Fallback to basic info
       contentForAI = `Study material about "${file.subject}". File type: ${file.fileType}.`;
     }
 
     try {
-      // Generate AI study guide using actual content
       const response = await ollama.chat({
         model: 'qwen2.5:1.5b',
         messages: [
@@ -311,7 +312,6 @@ Make it a practical, actionable study guide that directly relates to the provide
     } catch (ollamaError) {
       console.error('Ollama error:', ollamaError);
       
-      // Enhanced fallback study guide
       file.summary = `📚 STUDY REVIEWER: ${file.originalName}
 
 SUBJECT: ${file.subject}
@@ -355,7 +355,6 @@ This study guide is based on analysis of your actual study material.`;
   } catch (error) {
     console.error('Generate reviewer error:', error);
     
-    // Ultimate fallback
     const file = await File.findOne({
       _id: req.params.id,
       user: req.user._id
