@@ -1,55 +1,103 @@
-// src/pages/Login.jsx
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+
+  // Safe guard for missing context
+  let login;
+  try {
+    ({ login } = useAuth());
+  } catch (e) {
+    console.warn("AuthContext not found — using mock login");
+    login = async () => ({ success: true });
+  }
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     const result = await login(formData.email, formData.password);
-    if (!result.success) setError(result.message);
+    if (!result.success) setError(result.message || "Login failed");
 
     setLoading(false);
   };
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
       style={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80')`,
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundImage: "url('/imgs/mybg.png')",
+        backgroundRepeat: "repeat",
+        backgroundSize: "250px",
+        backgroundPosition: "center",
       }}
     >
-      {/* dark overlay for contrast */}
-      <div className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm"></div>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: "rgba(0,0,0,0.3)",
+        }}
+      ></div>
 
-      {/* content */}
-      <div className="relative z-10 w-full max-w-md bg-white bg-opacity-95 p-8 rounded-2xl shadow-2xl">
-        <h1 className="text-3xl font-extrabold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <div
+        style={{
+          position: "relative",
+          zIndex: 10,
+          width: "min(92%, 420px)",
+          background: "rgba(255,255,255,0.95)",
+          padding: "28px",
+          borderRadius: "18px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
+        }}
+      >
+        <h1 style={{ textAlign: "center", fontSize: "28px", margin: 0 }} className="text-3xl font-extrabold text-indigo-600" >
           LearnEase
         </h1>
-        <p className="text-center text-gray-600 mt-1 mb-6">Your Smart Study Companion</p>
+        <p
+          style={{
+            textAlign: "center",
+            color: "#444",
+            marginTop: 8,
+            marginBottom: 18,
+          }}
+        >
+          Your Smart Study Companion
+        </p>
 
         {error && (
-          <div className="bg-red-50 border border-red-300 text-red-600 text-sm rounded-md px-4 py-2 mb-4">
+          <div
+            style={{
+              background: "#fff1f0",
+              border: "1px solid #f4c2c2",
+              color: "#9b1b1b",
+              padding: 10,
+              borderRadius: 8,
+              marginBottom: 12,
+            }}
+          >
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label
+              style={{ display: "block", fontSize: 13, marginBottom: 6 }}
+              htmlFor="email"
+            >
               Email
             </label>
             <input
@@ -58,14 +106,23 @@ const Login = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="you@example.com"
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid #d1d5db",
+                fontSize: 14,
+              }}
               required
-              className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Enter your email"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label
+              style={{ display: "block", fontSize: 13, marginBottom: 6 }}
+              htmlFor="password"
+            >
               Password
             </label>
             <input
@@ -74,33 +131,52 @@ const Login = () => {
               type="password"
               value={formData.password}
               onChange={handleChange}
+              placeholder="Enter password"
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid #d1d5db",
+                fontSize: 14,
+              }}
               required
-              className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Enter your password"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 text-white font-medium bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-all duration-200 disabled:opacity-50"
+            style={{
+              width: "100%",
+              padding: "11px 14px",
+              borderRadius: 8,
+              border: "none",
+              background: "#4f46e5",
+              color: "white",
+              fontWeight: 600,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <Link
-            to="/forgot-password"
-            className="text-sm text-indigo-500 hover:text-indigo-600 transition-colors"
-          >
+        <div style={{ marginTop: 12, textAlign: "center", fontSize: 13 }}>
+          <Link to="/forgot-password" style={{ color: "#4f46e5" }}>
             Forgot Password?
           </Link>
         </div>
 
-        <p className="mt-6 text-center text-gray-600 text-sm">
-          Don’t have an account?{' '}
-          <Link to="/signup" className="text-indigo-600 font-medium hover:text-indigo-700">
+        <p
+          style={{
+            marginTop: 14,
+            textAlign: "center",
+            color: "#6b7280",
+            fontSize: 13,
+          }}
+        >
+          Don’t have an account?{" "}
+          <Link to="/signup" style={{ color: "#4f46e5", fontWeight: 600 }}>
             Sign Up
           </Link>
         </p>
