@@ -30,31 +30,27 @@ export const chatAPI = {
   updateChatTitle: (chatId, title) => api.patch(`/chat/${chatId}/title`, { title }),
 };
 
-// Add to your existing api.js
-// Add to your fileAPI object:
 export const fileAPI = {
   uploadFile: (formData) => api.post('/files/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
   }),
   getFiles: () => api.get('/files'),
-  getFileContent: (fileId) => api.get(`/files/${fileId}/content`), // ADD THIS LINE
+  getFileContent: (fileId) => api.get(`/files/${fileId}/content`),
   deleteFile: (fileId) => api.delete(`/files/${fileId}`),
   generateReviewer: (fileId) => api.post(`/files/${fileId}/generate-reviewer`),
 };
 
-// Add to your api.js
-// Update your api.jsx file
 export const quizAPI = {
   getQuizzes: () => api.get('/quizzes'),
   getQuiz: (quizId) => api.get(`/quizzes/${quizId}`),
   getAttempts: () => api.get('/quizzes/attempts'),
-  generateFromFile: (fileId, data) => api.post(`/quizzes/generate-from-file/${fileId}`, data),
+  generateFromFile: (fileId, data) => api.post(`/quiz/generate-from-file/${fileId}`, data), // match backend
+  generateCustomFromFile: (fileId, data) => api.post(`/quiz/generate-from-file/${fileId}`, data), // <-- correct
   generateQuick: (data) => api.post('/quizzes/generate-quick', data),
-  // NEW CUSTOM QUIZ ENDPOINTS
-  generateCustomFromFile: (fileId, data) => api.post(`/quizzes/generate-custom-from-file/${fileId}`, data),
   generateCustomQuick: (data) => api.post('/quizzes/generate-custom-quick', data),
-  generateHybridFromFile: (fileId, data) => api.post(`/quizzes/generate-hybrid-from-file/${fileId}`, data), // ADD THIS LINE
+  generateHybridFromFile: (fileId, data) => api.post(`/quizzes/generate-hybrid-from-file/${fileId}`, data),
   submitAttempt: (quizId, data) => api.post(`/quizzes/${quizId}/attempt`, data),
   deleteQuiz: (quizId) => api.delete(`/quizzes/${quizId}`),
 };
+
 export default api;

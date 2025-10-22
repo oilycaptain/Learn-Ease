@@ -13,7 +13,7 @@ import AskAI from './pages/AskAI';
 import Quizzes from './pages/Quizzes';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
-
+import QuizPage from "./pages/QuizPage";
 function App() {
   const { user } = useAuth();
 
@@ -32,6 +32,7 @@ function App() {
           <Route path="/quizzes" element={<Quizzes />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/quiz/:id" element={<QuizPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />
