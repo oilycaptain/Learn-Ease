@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 6 },
     // --- ADD THIS LINE ---
     profilePicUrl: { type: String, default: '' },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );

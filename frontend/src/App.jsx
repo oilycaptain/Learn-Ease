@@ -5,7 +5,8 @@ import { useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Login from './components/Login';
 import Signup from './components/Signup';
-
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import Dashboard from './pages/Dashboard';
 import StudyMaterials from './pages/StudyMaterials';
@@ -23,8 +24,10 @@ function App() {
   <Route path="/" element={<Home />} />
   <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
   <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
+  <Route path="/forgot-password" element={<ForgotPassword />} />
+  <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-  {/* All authenticated pages */}
+  {/* Protected routes */}
   <Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
     <Route path="/dashboard" element={<Dashboard />} />
     <Route path="/study-materials" element={<StudyMaterials />} />
@@ -32,14 +35,13 @@ function App() {
     <Route path="/quizzes" element={<Quizzes />} />
     <Route path="/analytics" element={<Analytics />} />
     <Route path="/settings" element={<Settings />} />
-
-    {/* Quiz page */}
     <Route path="/take-quiz" element={<QuizPage />} />
     <Route path="/quiz/:id" element={<QuizPage />} />
   </Route>
 
   <Route path="*" element={<Navigate to="/" />} />
 </Routes>
+
 
     </Router>
   );
