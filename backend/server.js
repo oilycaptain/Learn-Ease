@@ -11,7 +11,7 @@ let chatRoutes = null;
 let fileRoutes = null;
 try { chatRoutes = require('./routes/chat'); } catch {}
 try { fileRoutes = require('./routes/files'); } catch {}
-
+const quizRoutes = require('./routes/quiz');
 const app = express();
 
 /**
@@ -52,7 +52,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 if (chatRoutes) app.use('/api/chat', chatRoutes);
 if (fileRoutes) app.use('/api/files', fileRoutes);
-
+app.use('/api/quiz', quizRoutes);
 // Health check
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
