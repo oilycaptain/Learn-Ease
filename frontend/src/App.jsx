@@ -20,23 +20,27 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-        <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
+  <Route path="/" element={<Home />} />
+  <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+  <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
 
-        {/* All authed pages share global Navbar + Sidebar */}
-        <Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/study-materials" element={<StudyMaterials />} />
-          <Route path="/ask-ai" element={<AskAI />} />
-          <Route path="/quizzes" element={<Quizzes />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/quiz/:id" element={<QuizPage />} />
-        </Route>
+  {/* All authenticated pages */}
+  <Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
+    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/study-materials" element={<StudyMaterials />} />
+    <Route path="/ask-ai" element={<AskAI />} />
+    <Route path="/quizzes" element={<Quizzes />} />
+    <Route path="/analytics" element={<Analytics />} />
+    <Route path="/settings" element={<Settings />} />
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+    {/* Quiz page */}
+    <Route path="/take-quiz" element={<QuizPage />} />
+    <Route path="/quiz/:id" element={<QuizPage />} />
+  </Route>
+
+  <Route path="*" element={<Navigate to="/" />} />
+</Routes>
+
     </Router>
   );
 }
