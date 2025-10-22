@@ -132,11 +132,27 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 // -------------------
 // Forgot Password
 // -------------------
+const cooldowns = {}; // Temporary storage (resets when server restarts)
+const COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: 'Email is required.' });
 
   try {
+    const now = Date.now();
+
+    // ✅ Check if the email is currently on cooldown
+    if (cooldowns[email] && now - cooldowns[email] < COOLDOWN_MS) {
+      const secondsLeft = Math.ceil((COOLDOWN_MS - (now - cooldowns[email])) / 1000);
+      return res.status(429).json({
+        message: `Please wait ${secondsLeft}s before requesting another password reset.`,
+      });
+    }
+
+    // 🕒 Set cooldown
+    cooldowns[email] = now;
+
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
@@ -153,11 +169,15 @@ router.post('/forgot-password', async (req, res) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: 'LearnEase Password Reset',
-      html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. Link expires in 1 hour.</p>`
+      html: `
+        <p>Click <a href="${resetUrl}">here</a> to reset your password.</p>
+        <p>This link will expire in 1 hour.</p>
+      `,
     });
 
-    res.json({ message: 'Password reset email sent.' });
+    res.json({ message: 'Password reset email sent successfully.' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
