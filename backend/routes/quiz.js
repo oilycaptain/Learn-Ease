@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const authMiddleware = require('../middleware/authMiddleware');
 const File = require('../models/File');
+const QuizTaken = require('../models/QuizTaken'); // <-- Add this
 const router = express.Router();
 
 // Ensure dotenv is loaded
@@ -14,7 +15,9 @@ if (!GEMINI_API_KEY) {
   console.error("GEMINI_API_KEY not set in .env");
 }
 
+// -------------------------
 // POST /api/quiz/generate-from-file/:fileId
+// -------------------------
 router.post('/generate-from-file/:fileId', authMiddleware, async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -28,7 +31,7 @@ router.post('/generate-from-file/:fileId', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'File not found or no extracted text.' });
     }
 
-    // Limit text length to avoid API issues
+    // Limit text length
     const materialText = file.extractedText.substring(0, 15000);
 
     // Construct prompt
@@ -46,7 +49,7 @@ Each object must have:
 - "answer": string
 `;
 
-    // Call Google Gemini API directly
+    // Call Google Gemini API
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
     const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
@@ -85,6 +88,47 @@ Each object must have:
   } catch (err) {
     console.error('Server error in /generate-from-file:', err);
     res.status(500).json({ message: 'Server error generating quiz.', error: err.message });
+  }
+});
+
+// -------------------------
+// POST /api/quiz/submit
+// Save a taken quiz for the logged-in user
+// -------------------------
+router.post('/submit', authMiddleware, async (req, res) => {
+  const userId = req.user._id;
+  const { quizId, quizTitle, score, totalQuestions } = req.body;
+
+  try {
+    const quizTaken = new QuizTaken({
+      user: userId,
+      quizId,
+      quizTitle,
+      score,
+      totalQuestions
+    });
+
+    await quizTaken.save();
+    res.json({ message: "Quiz submitted successfully", quizTaken });
+  } catch (err) {
+    console.error("Failed to save quiz:", err);
+    res.status(500).json({ message: "Failed to save quiz" });
+  }
+});
+
+// -------------------------
+// GET /api/quiz/taken
+// Fetch all quizzes taken by the logged-in user
+// -------------------------
+router.get('/taken', authMiddleware, async (req, res) => {
+  const userId = req.user._id;
+
+  try {
+    const quizzes = await QuizTaken.find({ user: userId }).sort({ takenAt: -1 }); // most recent first
+    res.json({ quizzes });
+  } catch (err) {
+    console.error("Failed to fetch quizzes:", err);
+    res.status(500).json({ message: "Failed to fetch quizzes" });
   }
 });
 

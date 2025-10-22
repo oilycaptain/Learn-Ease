@@ -46,7 +46,12 @@ const timeAgo = (date) => {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    notesUploaded: 0,
+    questionsAsked: 0,
+    reviewersGenerated: 0,
+    quizzesTaken: 0
+  });
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,27 +59,26 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // Fetch files and chats in parallel
-        const [filesResponse, chatsResponse] = await Promise.all([
+        // Fetch files, chats, and quizzes in parallel
+        const [filesRes, chatsRes, quizzesRes] = await Promise.all([
           api.get('/files'),
-          api.get('/chat')
+          api.get('/chat'),
+          api.get('/quiz/taken')
         ]);
 
-        const files = filesResponse.data || [];
-        const chats = chatsResponse.data || [];
+        const files = filesRes.data || [];
+        const chats = chatsRes.data || [];
+        const quizzes = quizzesRes.data?.quizzes || [];
 
-        // Calculate stats
-        const notesUploaded = files.length;
-        const questionsAsked = chats.length;
-        const reviewersGenerated = files.filter(f => f.summary).length;
-        
+        // Update stats
         setStats({
-            notesUploaded,
-            questionsAsked,
-            reviewersGenerated
+          notesUploaded: files.length,
+          questionsAsked: chats.length,
+          reviewersGenerated: files.filter(f => f.summary).length,
+          quizzesTaken: quizzes.length
         });
 
-        // Combine and sort recent activity
+        // Combine recent activity
         const fileActivity = files.map(file => ({
           type: 'file',
           icon: <DocumentTextIcon />,
@@ -96,14 +100,13 @@ const Dashboard = () => {
         }));
 
         const combinedActivity = [...fileActivity, ...chatActivity]
-          .sort((a, b) => b.date - a.date) // Sort by most recent
-          .slice(0, 5); // Get top 5 recent activities
+          .sort((a, b) => b.date - a.date)
+          .slice(0, 5);
 
         setRecentActivity(combinedActivity);
 
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-        // Handle error state if needed
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
       } finally {
         setLoading(false);
       }
@@ -113,11 +116,12 @@ const Dashboard = () => {
   }, []);
 
   const statCards = [
-    { label: "Notes Uploaded", value: stats?.notesUploaded, icon: <DocumentTextIcon />, color: "text-green-500", bgColor: "bg-green-50" },
-    { label: "AI Chats Started", value: stats?.questionsAsked, icon: <QuestionMarkCircleIcon />, color: "text-purple-500", bgColor: "bg-purple-50" },
-    { label: "Reviewers Generated", value: stats?.reviewersGenerated, icon: <SparklesIcon />, color: "text-blue-500", bgColor: "bg-blue-50" },
-    { label: "Quizzes Taken", value: "0", icon: <ChartBarIcon />, color: "text-orange-500", bgColor: "bg-orange-50" }, // Placeholder for future feature
+    { label: "Notes Uploaded", value: stats.notesUploaded, icon: <DocumentTextIcon />, color: "text-green-500", bgColor: "bg-green-50" },
+    { label: "AI Chats Started", value: stats.questionsAsked, icon: <QuestionMarkCircleIcon />, color: "text-purple-500", bgColor: "bg-purple-50" },
+    { label: "Reviewers Generated", value: stats.reviewersGenerated, icon: <SparklesIcon />, color: "text-blue-500", bgColor: "bg-blue-50" },
+    { label: "Quizzes Taken", value: stats?.quizzesTaken || 0, icon: <ChartBarIcon />, color: "text-orange-500", bgColor: "bg-orange-50" },
   ];
+
 
   const quickActions = [
     { title: "Upload Notes", icon: <DocumentTextIcon />, to: "/study-materials" },
@@ -190,7 +194,7 @@ const Dashboard = () => {
                 ))
               ) : (
                 <div className="text-center py-10">
-                    <p className="text-gray-500">No recent activity. Upload a file or start a chat!</p>
+                    <p className="text-gray-500">No recent activity. Upload a file, start a chat, or take a quiz!</p>
                 </div>
               )}
             </div>
@@ -232,4 +236,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

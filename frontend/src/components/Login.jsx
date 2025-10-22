@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   // Safe guard for missing context
   let login;
@@ -25,10 +27,15 @@ const Login = () => {
     setError("");
     setLoading(true);
 
-    const result = await login(formData.email, formData.password);
-    if (!result.success) setError(result.message || "Login failed");
-
-    setLoading(false);
+    try {
+      const result = await login(formData.email, formData.password);
+      if (!result.success) setError(result.message || "Login failed");
+      else navigate("/dashboard"); // redirect after successful login
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,13 +51,7 @@ const Login = () => {
         backgroundPosition: "center",
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.3)",
-        }}
-      ></div>
+      <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.3)" }} />
 
       <div
         style={{
@@ -63,17 +64,13 @@ const Login = () => {
           boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
         }}
       >
-        <h1 style={{ textAlign: "center", fontSize: "28px", margin: 0 }} className="text-3xl font-extrabold text-indigo-600" >
+        <h1
+          style={{ textAlign: "center", fontSize: "28px", margin: 0 }}
+          className="text-3xl font-extrabold text-indigo-600"
+        >
           LearnEase
         </h1>
-        <p
-          style={{
-            textAlign: "center",
-            color: "#444",
-            marginTop: 8,
-            marginBottom: 18,
-          }}
-        >
+        <p style={{ textAlign: "center", color: "#444", marginTop: 8, marginBottom: 18 }}>
           Your Smart Study Companion
         </p>
 
@@ -94,10 +91,7 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
           <div>
-            <label
-              style={{ display: "block", fontSize: 13, marginBottom: 6 }}
-              htmlFor="email"
-            >
+            <label style={{ display: "block", fontSize: 13, marginBottom: 6 }} htmlFor="email">
               Email
             </label>
             <input
@@ -119,10 +113,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label
-              style={{ display: "block", fontSize: 13, marginBottom: 6 }}
-              htmlFor="password"
-            >
+            <label style={{ display: "block", fontSize: 13, marginBottom: 6 }} htmlFor="password">
               Password
             </label>
             <input
@@ -167,14 +158,7 @@ const Login = () => {
           </Link>
         </div>
 
-        <p
-          style={{
-            marginTop: 14,
-            textAlign: "center",
-            color: "#6b7280",
-            fontSize: 13,
-          }}
-        >
+        <p style={{ marginTop: 14, textAlign: "center", color: "#6b7280", fontSize: 13 }}>
           Don’t have an account?{" "}
           <Link to="/signup" style={{ color: "#4f46e5", fontWeight: 600 }}>
             Sign Up
