@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
+// --- Pages & Components ---
 import Home from './pages/Home';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -15,34 +16,43 @@ import Quizzes from './pages/Quizzes';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import QuizPage from "./pages/QuizPage";
+import TimedQuiz from "./pages/TimedQuiz";
+import LivesChallenge from "./pages/LivesChallenge";
+import StreakMode from "./pages/StreakMode"; // 🆕 Added Streak Mode
+
 function App() {
   const { user } = useAuth();
 
   return (
     <Router>
       <Routes>
-  <Route path="/" element={<Home />} />
-  <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-  <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
-  <Route path="/forgot-password" element={<ForgotPassword />} />
-  <Route path="/reset-password/:token" element={<ResetPassword />} />
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-  {/* Protected routes */}
-  <Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
-    <Route path="/dashboard" element={<Dashboard />} />
-    <Route path="/study-materials" element={<StudyMaterials />} />
-    <Route path="/ask-ai" element={<AskAI />} />
-    <Route path="/quizzes" element={<Quizzes />} />
-    <Route path="/analytics" element={<Analytics />} />
-    <Route path="/settings" element={<Settings />} />
-    <Route path="/take-quiz" element={<QuizPage />} />
-    <Route path="/quiz/:id" element={<QuizPage />} />
-  </Route>
+        {/* Protected Routes (Require Login) */}
+        <Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/study-materials" element={<StudyMaterials />} />
+          <Route path="/ask-ai" element={<AskAI />} />
+          <Route path="/quizzes" element={<Quizzes />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/take-quiz" element={<QuizPage />} />
+          <Route path="/quiz/:id" element={<QuizPage />} />
 
-  <Route path="*" element={<Navigate to="/" />} />
-</Routes>
+          {/* Game Modes */}
+          <Route path="/gamemode/timed" element={<TimedQuiz />} />
+          <Route path="/gamemode/lives" element={<LivesChallenge />} />
+          <Route path="/gamemode/streak" element={<StreakMode />} /> {/* 🆕 Streak Mode Route */}
+        </Route>
 
-
+        {/* Catch-All Redirect */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </Router>
   );
 }
