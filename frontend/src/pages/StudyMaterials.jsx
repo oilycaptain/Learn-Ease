@@ -123,83 +123,81 @@ export default function StudyMaterials() {
   return (
     <div className="h-full w-full">
       {/* Header controls */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-gray-100">
-        <div className="mx-auto max-w-screen-2xl px-6 md:px-8 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex-1 flex items-center gap-3">
-            <div className="relative w-full max-w-xl">
-              <input
-                type="text"
-                placeholder="Search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 transition"
-              />
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
-                />
-              </svg>
-            </div>
-
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none rounded-xl border border-gray-200 bg-white pl-3 pr-9 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 transition"
-              >
-                <option value="recent">Sort by: Recent</option>
-                <option value="az">Sort by: A–Z</option>
-                <option value="progress">Sort by: Progress</option>
-              </select>
-              <svg
-                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M5.23 7.21a.75.75 0 011.06.02L10 11.188l3.71-3.96a.75.75 0 111.1 1.02l-4.25 4.53a.75.75 0 01-1.1 0L5.21 8.29a.75.75 0 01.02-1.08z" />
-              </svg>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-3">
-            <button
-              type="button"
-              onClick={openPicker}
-              disabled={uploading}
-              title="Upload file"
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:shadow-md focus-visible:ring-4 focus-visible:ring-indigo-100 transition ${uploading ? "opacity-60 cursor-not-allowed" : ""}`}
-            >
-              {uploading ? (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-              ) : (
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              )}
-            </button>
-
+      <div className="mx-auto max-w-screen-6xl px-6 md:px-3 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex-1 flex items-center gap-3">
+          <div className="relative w-full max-w-xl">
             <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.md,.rtf"
-              className="hidden"
-              onChange={onFilePicked}
+              type="text"
+              placeholder="Search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-3 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 transition"
             />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+              />
+            </svg>
           </div>
+
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="appearance-none rounded-xl border border-gray-200 bg-white pl-3 pr-9 py-2.5 text-sm outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 transition"
+            >
+              <option value="recent">Sort by: Recent</option>
+              <option value="az">Sort by: A–Z</option>
+              <option value="progress">Sort by: Progress</option>
+            </select>
+            <svg
+              className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M5.23 7.21a.75.75 0 011.06.02L10 11.188l3.71-3.96a.75.75 0 111.1 1.02l-4.25 4.53a.75.75 0 01-1.1 0L5.21 8.29a.75.75 0 01.02-1.08z" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-3">
+          <button
+            type="button"
+            onClick={openPicker}
+            disabled={uploading}
+            title="Upload file"
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:shadow-md focus-visible:ring-4 focus-visible:ring-indigo-100 transition ${uploading ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            {uploading ? (
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+            ) : (
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            )}
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.md,.rtf"
+            className="hidden"
+            onChange={onFilePicked}
+          />
         </div>
       </div>
 
