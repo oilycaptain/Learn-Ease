@@ -17,7 +17,8 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import QuizPage from "./pages/QuizPage";
 import TimedQuiz from "./pages/TimedQuiz";
-import LivesChallenge from "./pages/LivesChallenge"; // 🆕 Import Lives Challenge
+import LivesChallenge from "./pages/LivesChallenge";
+import StreakMode from "./pages/StreakMode"; // 🆕 Added Streak Mode
 
 function App() {
   const { user } = useAuth();
@@ -45,7 +46,8 @@ function App() {
 
           {/* Game Modes */}
           <Route path="/gamemode/timed" element={<TimedQuiz />} />
-          <Route path="/gamemode/lives" element={<LivesChallenge />} /> {/* 🆕 Lives Challenge Route */}
+          <Route path="/gamemode/lives" element={<LivesChallenge />} />
+          <Route path="/gamemode/streak" element={<StreakMode />} /> {/* 🆕 Streak Mode Route */}
         </Route>
 
         {/* Catch-All Redirect */}

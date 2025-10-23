@@ -113,9 +113,7 @@ const Quizzes = () => {
     fetchMaterials();
   }, []);
 
-  // ---------------------------
   // Generate AI quiz from file
-  // ---------------------------
   const handleGenerateQuiz = async () => {
     if (!studyMaterial)
       return showNotification("Select a study material!", "error");
@@ -153,31 +151,20 @@ const Quizzes = () => {
         throw new Error("No questions returned.");
 
       // ✅ Route based on selected mode
-      if (quizMode === "timed") {
-        navigate("/gamemode/timed", {
-          state: {
-            questions: data.questions,
-            quizTitle: data.quizTitle,
-            fileId: studyMaterial,
-          },
-        });
-      } else if (quizMode === "lives") {
-        navigate("/gamemode/lives", {
-          state: {
-            questions: data.questions,
-            quizTitle: data.quizTitle,
-            fileId: studyMaterial,
-          },
-        });
-      } else {
-        navigate("/take-quiz", {
-          state: {
-            questions: data.questions,
-            quizTitle: data.quizTitle,
-            fileId: studyMaterial,
-          },
-        });
-      }
+      const routeMap = {
+        timed: "/gamemode/timed",
+        lives: "/gamemode/lives",
+        streak: "/gamemode/streak",
+        standard: "/take-quiz",
+      };
+
+      navigate(routeMap[quizMode], {
+        state: {
+          questions: data.questions,
+          quizTitle: data.quizTitle,
+          fileId: studyMaterial,
+        },
+      });
     } catch (err) {
       console.error(err);
       showNotification(err.message || "Failed to generate quiz.", "error");
@@ -188,9 +175,7 @@ const Quizzes = () => {
 
   const toggleQuizType = (type) => {
     setQuizTypes((prev) =>
-      prev.includes(type)
-        ? prev.filter((t) => t !== type)
-        : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
 
@@ -204,22 +189,22 @@ const Quizzes = () => {
   if (view === "game") {
     const gameModes = [
       {
-        title: "Timed Quiz",
+        title: "⏱️ Timed Quiz",
         desc: "Answer all questions before time runs out! Accuracy and speed both matter.",
-        icon: "⏱️",
         mode: "timed",
+        color: "from-blue-100 to-blue-200",
       },
       {
-        title: "Lives Challenge",
+        title: "❤️ Lives Challenge",
         desc: "Start with 3 lives. Each wrong answer costs one — can you survive till the end?",
-        icon: "❤️",
         mode: "lives",
+        color: "from-red-100 to-pink-200",
       },
       {
-        title: "Streak Mode",
+        title: "🔥 Streak Mode",
         desc: "Test your consistency! Build the longest correct answer streak.",
-        icon: "🔥",
         mode: "streak",
+        color: "from-orange-100 to-yellow-200",
       },
     ];
 
@@ -242,17 +227,16 @@ const Quizzes = () => {
                   setQuizMode(g.mode);
                   setView("type");
                 }}
-                className={`cursor-pointer p-6 rounded-2xl border-2 transition-all hover:shadow-md ${
+                className={`cursor-pointer p-6 rounded-2xl border-2 transition-all bg-gradient-to-br ${g.color} ${
                   quizMode === g.mode
-                    ? "border-indigo-600 bg-indigo-50"
-                    : "border-gray-200 hover:border-indigo-400"
+                    ? "border-indigo-600 shadow-md scale-105"
+                    : "border-gray-200 hover:border-indigo-400 hover:shadow"
                 }`}
               >
-                <div className="text-5xl mb-3">{g.icon}</div>
-                <h3 className="text-lg font-semibold text-gray-800">
+                <h3 className="text-xl font-semibold text-gray-800">
                   {g.title}
                 </h3>
-                <p className="text-gray-600 text-sm mt-2">{g.desc}</p>
+                <p className="text-gray-700 text-sm mt-2">{g.desc}</p>
               </div>
             ))}
           </div>
@@ -280,24 +264,22 @@ const Quizzes = () => {
             Choose how you want to be tested. You can pick more than one.
           </p>
 
-          {["Multiple Choice", "Identification", "True or False"].map(
-            (type) => (
-              <div
-                key={type}
-                onClick={() => toggleQuizType(type)}
-                className={`cursor-pointer p-4 border-2 rounded-xl flex items-center justify-between mt-4 transition-all ${
-                  quizTypes.includes(type)
-                    ? "border-indigo-600 bg-indigo-50"
-                    : "border-gray-300 hover:border-gray-400"
-                }`}
-              >
-                <span className="font-semibold text-gray-800">{type}</span>
-                {quizTypes.includes(type) && (
-                  <span className="text-indigo-600 font-bold">✓</span>
-                )}
-              </div>
-            )
-          )}
+          {["Multiple Choice", "Identification", "True or False"].map((type) => (
+            <div
+              key={type}
+              onClick={() => toggleQuizType(type)}
+              className={`cursor-pointer p-4 border-2 rounded-xl flex items-center justify-between mt-4 transition-all ${
+                quizTypes.includes(type)
+                  ? "border-indigo-600 bg-indigo-50"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <span className="font-semibold text-gray-800">{type}</span>
+              {quizTypes.includes(type) && (
+                <span className="text-indigo-600 font-bold">✓</span>
+              )}
+            </div>
+          ))}
 
           <div className="mt-8 flex justify-between">
             <button
