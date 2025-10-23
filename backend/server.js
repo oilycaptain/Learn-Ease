@@ -9,8 +9,12 @@ const authRoutes = require('./routes/auth');
 // Try to mount optional routes only if they exist
 let chatRoutes = null;
 let fileRoutes = null;
-try { chatRoutes = require('./routes/chat'); } catch {}
-try { fileRoutes = require('./routes/files'); } catch {}
+let studyRoutes = null;
+
+try { chatRoutes = require('./routes/chat'); } catch (e) { console.log('Chat routes not found:', e.message); }
+try { fileRoutes = require('./routes/files'); } catch (e) { console.log('File routes not found:', e.message); }
+try { studyRoutes = require('./routes/study'); } catch (e) { console.log('Study routes not found:', e.message); }
+
 const quizRoutes = require('./routes/quiz');
 const app = express();
 
@@ -52,7 +56,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 if (chatRoutes) app.use('/api/chat', chatRoutes);
 if (fileRoutes) app.use('/api/files', fileRoutes);
+if (studyRoutes) app.use('/api/study', studyRoutes);
 app.use('/api/quiz', quizRoutes);
+
 // Health check
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 

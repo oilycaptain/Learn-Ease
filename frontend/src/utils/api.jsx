@@ -6,7 +6,6 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Add token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -31,26 +30,63 @@ export const chatAPI = {
 };
 
 export const fileAPI = {
-  uploadFile: (formData) => api.post('/files/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  uploadFile: (formData) =>
+    api.post('/files/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getFiles: () => api.get('/files'),
   getFileContent: (fileId) => api.get(`/files/${fileId}/content`),
   deleteFile: (fileId) => api.delete(`/files/${fileId}`),
   generateReviewer: (fileId) => api.post(`/files/${fileId}/generate-reviewer`),
 };
 
+export const studyAPI = {
+  uploadStudyMaterial: async (formData) => {
+    const response = await api.post('/study/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data', Accept: 'application/json' },
+    });
+    return response.data;
+  },
+  getStudyMaterials: async () => {
+    const response = await api.get('/study/materials');
+    return response.data;
+  },
+  generateReviewer: async (materialId, customInstructions = '', mode = 'enhanced') => {
+    const response = await api.post(`/study/generate-reviewer/${materialId}`, {
+      customInstructions,
+      mode,
+    });
+    return response.data;
+  },
+  deleteStudyMaterial: async (materialId) => {
+    const response = await api.delete(`/study/materials/${materialId}`);
+    return response.data;
+  },
+  getStudyMaterial: async (materialId) => {
+    const response = await api.get(`/study/materials/${materialId}`);
+    return response.data;
+  },
+  updateStudyMaterial: async (materialId, updates) => {
+    const response = await api.patch(`/study/materials/${materialId}`, updates);
+    return response.data;
+  },
+};
+
+export const uploadStudyMaterial = studyAPI.uploadStudyMaterial;
+export const getStudyMaterials = studyAPI.getStudyMaterials;
+export const generateStudyReviewer = studyAPI.generateReviewer;
+export const deleteStudyMaterial = studyAPI.deleteStudyMaterial;
+export const generateReviewer = studyAPI.generateReviewer;
+
 export const quizAPI = {
   getQuizzes: () => api.get('/quizzes'),
   getQuiz: (quizId) => api.get(`/quizzes/${quizId}`),
   getAttempts: () => api.get('/quizzes/attempts'),
-  generateFromFile: (fileId, data) => api.post(`/quiz/generate-from-file/${fileId}`, data), // match backend
-  generateCustomFromFile: (fileId, data) => api.post(`/quiz/generate-from-file/${fileId}`, data), // <-- correct
-  generateQuick: (data) => api.post('/quizzes/generate-quick', data),
-  generateCustomQuick: (data) => api.post('/quizzes/generate-custom-quick', data),
-  generateHybridFromFile: (fileId, data) => api.post(`/quizzes/generate-hybrid-from-file/${fileId}`, data),
   submitAttempt: (quizId, data) => api.post(`/quizzes/${quizId}/attempt`, data),
   deleteQuiz: (quizId) => api.delete(`/quizzes/${quizId}`),
+  generateFromFile: (fileId, data) => api.post(`/quiz/generate-from-file/${fileId}`, data),
+  generateQuick: (data) => api.post('/quizzes/generate-quick', data),
+  generateCustomFromFile: (fileId, data) => api.post(`/quizzes/generate-custom-from-file/${fileId}`, data),
+  generateCustomQuick: (data) => api.post('/quizzes/generate-custom-quick', data),
+  generateHybridFromFile: (fileId, data) => api.post(`/quizzes/generate-hybrid-from-file/${fileId}`, data),
 };
 
 export default api;
