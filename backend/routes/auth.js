@@ -141,37 +141,62 @@ router.post('/forgot-password', async (req, res) => {
 
   try {
     const now = Date.now();
-
-    // ✅ Check if the email is currently on cooldown
     if (cooldowns[email] && now - cooldowns[email] < COOLDOWN_MS) {
       const secondsLeft = Math.ceil((COOLDOWN_MS - (now - cooldowns[email])) / 1000);
       return res.status(429).json({
         message: `Please wait ${secondsLeft}s before requesting another password reset.`,
       });
     }
-
-    // 🕒 Set cooldown
     cooldowns[email] = now;
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = Date.now() + 3600000; // 1 hour
-
+    const resetTokenExpiry = Date.now() + 3600000;
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = resetTokenExpiry;
     await user.save();
 
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
+    // ✨ Polished email format ✨
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"LearnEase Support" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'LearnEase Password Reset',
+      subject: '🔐 Reset Your LearnEase Password',
       html: `
-        <p>Click <a href="${resetUrl}">here</a> to reset your password.</p>
-        <p>This link will expire in 1 hour.</p>
+        <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 30px;">
+          <div style="max-width: 600px; background: white; margin: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
+            <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
+              <h1 style="margin: 0; font-size: 22px;">LearnEase</h1>
+            </div>
+
+            <div style="padding: 30px;">
+              <p style="font-size: 16px; color: #333;">Hi there,</p>
+              <p style="font-size: 15px; color: #333;">
+                We received a request to reset your password. Click the button below to set a new password:
+              </p>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" 
+                   style="background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-size: 16px;">
+                  Reset Password
+                </a>
+              </div>
+
+              <p style="font-size: 14px; color: #666;">
+                This link will expire in <strong>1 hour</strong>. If you didn’t request a password reset, please ignore this email.
+              </p>
+
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+              <p style="font-size: 12px; color: #999; text-align: center;">
+                © ${new Date().getFullYear()} LearnEase. All rights reserved.<br>
+                This is an automated message — please do not reply.
+              </p>
+            </div>
+          </div>
+        </div>
       `,
     });
 
@@ -181,6 +206,7 @@ router.post('/forgot-password', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
+
 
 // -------------------
 // Reset Password
