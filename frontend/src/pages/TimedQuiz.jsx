@@ -16,6 +16,10 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const [score, setScore] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // ✅ Load sound effects (only once)
+  const correctSound = new Audio("/sounds/correct.mp3");
+  const wrongSound = new Audio("/sounds/wrong.mp3");
+
   // Fetch quiz
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -53,7 +57,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     fetchQuiz();
   }, [fileId]);
 
-  // Per-question 20s timer
+  // Timer logic
   useEffect(() => {
     if (loading || submitted) return;
     if (timeLeft <= 0) {
@@ -65,21 +69,36 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     return () => clearInterval(timer);
   }, [timeLeft, loading, submitted]);
 
-  // Move to next question automatically when time runs out
   const handleNextAuto = () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((i) => i + 1);
-      setTimeLeft(20); // reset timer
+      setTimeLeft(20);
     } else {
       handleSubmit();
     }
   };
 
+  // ✅ Store the selected answer only
   const handleAnswer = (index, value) => {
     if (!submitted) setAnswers((prev) => ({ ...prev, [index]: value }));
   };
 
+  // ✅ Play sound after clicking "Next"
   const handleNext = () => {
+    const currentQuestion = questions[currentIndex];
+    const userAnswer = answers[currentIndex]?.trim().toLowerCase();
+    const correctAnswer = currentQuestion?.answer?.trim().toLowerCase();
+
+    if (userAnswer) {
+      if (userAnswer === correctAnswer) {
+        correctSound.currentTime = 0;
+        correctSound.play().catch(() => {});
+      } else {
+        wrongSound.currentTime = 0;
+        wrongSound.play().catch(() => {});
+      }
+    }
+
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((i) => i + 1);
       setTimeLeft(20);
@@ -121,9 +140,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-800">🧠 Timed Quiz</h1>
           <div className="flex flex-col items-center">
-            <span className="text-sm text-gray-600 font-medium">
-              Time Left
-            </span>
+            <span className="text-sm text-gray-600 font-medium">Time Left</span>
             <span
               className={`font-bold text-lg ${
                 timeLeft < 6 ? "text-red-500" : "text-blue-600"
@@ -138,10 +155,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
         {!submitted ? (
           <>
             {questions.length > 0 ? (
-              <div
-                key={currentIndex}
-                className="transition-all duration-300"
-              >
+              <div key={currentIndex} className="transition-all duration-300">
                 <div className="p-5 bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
                   <h3 className="font-semibold text-gray-800 mb-4">
                     {currentIndex + 1}. {questions[currentIndex].question}

@@ -19,6 +19,9 @@ const LivesChallenge = ({ fileId: propFileId }) => {
   const [gameOver, setGameOver] = useState(false);
   const [feedback, setFeedback] = useState("");
 
+  const correctSound = new Audio("/sounds/correct.mp3");
+  const wrongSound = new Audio("/sounds/wrong.mp3");
+
   // Fetch quiz
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -63,16 +66,18 @@ const LivesChallenge = ({ fileId: propFileId }) => {
       questions[index].answer.trim().toLowerCase();
 
     if (correct) {
+      correctSound.play();
       setScore((s) => s + 1);
       setFeedback("✅ Correct!");
     } else {
+      wrongSound.play();
       setLives((l) => l - 1);
       setFeedback("❌ Wrong!");
     }
 
     setAnswers((prev) => ({ ...prev, [index]: value }));
 
-    // Delay before moving to next question
+    // Delay before next question
     setTimeout(() => {
       setFeedback("");
       if (index < questions.length - 1) {
@@ -83,7 +88,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
     }, 1000);
   };
 
-  // End game when out of lives
+  // End game when lives = 0
   useEffect(() => {
     if (lives <= 0) setGameOver(true);
   }, [lives]);
@@ -213,10 +218,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
             />
             <button
               onClick={() =>
-                handleAnswer(
-                  currentIndex,
-                  document.querySelector("input").value
-                )
+                handleAnswer(currentIndex, document.querySelector("input").value)
               }
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
             >
