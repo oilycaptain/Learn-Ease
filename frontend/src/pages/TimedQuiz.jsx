@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
+import api from "../utils/api";
 
 const TimedQuiz = ({ fileId: propFileId }) => {
   const { user } = useAuth();
@@ -21,11 +22,11 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const [numQuestions, setNumQuestions] = useState(5);
   const [quizStarted, setQuizStarted] = useState(false);
 
-  // ✅ Load sound effects (only once)
+  // ✅ Load sound effects
   const correctSound = new Audio("/sounds/correct.mp3");
   const wrongSound = new Audio("/sounds/wrong.mp3");
 
-  // Fetch quiz (only when user starts)
+  // Fetch quiz (when user starts)
   useEffect(() => {
     if (!quizStarted || !fileId) return;
 
@@ -112,15 +113,38 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     }
   };
 
-  const handleSubmit = () => {
+  // 🆕 Updated handleSubmit — with auto-save to backend
+  const handleSubmit = async () => {
     let scoreCount = 0;
     questions.forEach((q, i) => {
       if (answers[i]?.trim().toLowerCase() === q.answer.trim().toLowerCase()) {
         scoreCount++;
       }
     });
+
     setScore(scoreCount);
     setSubmitted(true);
+
+    // 🧩 Save quiz record to backend
+    try {
+      const token = localStorage.getItem("token");
+      await api.post(
+  "/quiz/submit",
+  {
+    quizId: fileId, // optional: if you don't have a Quiz collection
+    quizTitle: `Quiz for ${fileId}`, // or get actual file name
+    score: scoreCount,
+    totalQuestions: questions.length
+  },
+  {
+    headers: { Authorization: `Bearer ${token}` },
+  }
+);
+
+      console.log("✅ Quiz saved successfully!");
+    } catch (err) {
+      console.error("❌ Failed to save quiz:", err);
+    }
   };
 
   // 🆕 Quiz setup screen
@@ -149,7 +173,6 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     );
   }
 
-  // Loading or quiz display
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center h-screen text-lg font-semibold text-gray-600">
@@ -237,9 +260,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
                     type="text"
                     className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     value={answers[currentIndex] || ""}
-                    onChange={(e) =>
-                      handleAnswer(currentIndex, e.target.value)
-                    }
+                    onChange={(e) => handleAnswer(currentIndex, e.target.value)}
                     placeholder="Your answer..."
                   />
                 )}
