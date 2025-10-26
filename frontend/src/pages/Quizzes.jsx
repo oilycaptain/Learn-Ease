@@ -140,7 +140,7 @@ const Quizzes = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ numQuestions, quizTypes }),
+            body: JSON.stringify({ numQuestions, quizTypes, timePerQuestion }),
           }
         );
         data = await res.json();

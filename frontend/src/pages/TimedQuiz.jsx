@@ -7,10 +7,10 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const { user } = useAuth();
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
-
+  const timePerQuestion = location.state?.timePerQuestion || 20;
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(20);
+  const [timeLeft, setTimeLeft] = useState(timePerQuestion);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
@@ -72,7 +72,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const handleNextAuto = () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((i) => i + 1);
-      setTimeLeft(20);
+      setTimeLeft(timePerQuestion);
     } else {
       handleSubmit();
     }
@@ -101,14 +101,14 @@ const TimedQuiz = ({ fileId: propFileId }) => {
 
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((i) => i + 1);
-      setTimeLeft(20);
+      setTimeLeft(timePerQuestion);
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex((i) => i - 1);
-      setTimeLeft(20);
+      setTimeLeft(timePerQuestion);
     }
   };
 
