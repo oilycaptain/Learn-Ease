@@ -7,28 +7,30 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const { user } = useAuth();
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
-  const timePerQuestion = location.state?.timePerQuestion || 20;
+
+  // 🧠 States
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(timePerQuestion);
-  const [loading, setLoading] = useState(true);
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // 🆕 User setup states
+  const [numQuestions, setNumQuestions] = useState(5);
+  const [quizStarted, setQuizStarted] = useState(false);
 
   // ✅ Load sound effects (only once)
   const correctSound = new Audio("/sounds/correct.mp3");
   const wrongSound = new Audio("/sounds/wrong.mp3");
 
-  // Fetch quiz
+  // Fetch quiz (only when user starts)
   useEffect(() => {
-    const fetchQuiz = async () => {
-      if (!fileId) {
-        alert("No study material selected!");
-        setLoading(false);
-        return;
-      }
+    if (!quizStarted || !fileId) return;
 
+    const fetchQuiz = async () => {
+      setLoading(true);
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
@@ -39,7 +41,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ numQuestions: 5 }),
+            body: JSON.stringify({ numQuestions }),
           }
         );
 
@@ -55,11 +57,11 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     };
 
     fetchQuiz();
-  }, [fileId]);
+  }, [quizStarted, fileId, numQuestions]);
 
   // Timer logic
   useEffect(() => {
-    if (loading || submitted) return;
+    if (loading || submitted || !quizStarted) return;
     if (timeLeft <= 0) {
       handleNextAuto();
       return;
@@ -67,23 +69,21 @@ const TimedQuiz = ({ fileId: propFileId }) => {
 
     const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, loading, submitted]);
+  }, [timeLeft, loading, submitted, quizStarted]);
 
   const handleNextAuto = () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((i) => i + 1);
-      setTimeLeft(timePerQuestion);
+      setTimeLeft(20);
     } else {
       handleSubmit();
     }
   };
 
-  // ✅ Store the selected answer only
   const handleAnswer = (index, value) => {
     if (!submitted) setAnswers((prev) => ({ ...prev, [index]: value }));
   };
 
-  // ✅ Play sound after clicking "Next"
   const handleNext = () => {
     const currentQuestion = questions[currentIndex];
     const userAnswer = answers[currentIndex]?.trim().toLowerCase();
@@ -101,14 +101,14 @@ const TimedQuiz = ({ fileId: propFileId }) => {
 
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((i) => i + 1);
-      setTimeLeft(timePerQuestion);
+      setTimeLeft(20);
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex((i) => i - 1);
-      setTimeLeft(timePerQuestion);
+      setTimeLeft(20);
     }
   };
 
@@ -123,6 +123,33 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     setSubmitted(true);
   };
 
+  // 🆕 Quiz setup screen
+  if (!quizStarted) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <h1 className="text-3xl font-bold mb-4 text-gray-800">🧠 Start Timed Quiz</h1>
+
+        <label className="text-gray-700 font-medium mb-2">Number of Questions:</label>
+        <input
+          type="number"
+          min="1"
+          max="50"
+          value={numQuestions}
+          onChange={(e) => setNumQuestions(Number(e.target.value))}
+          className="border p-3 rounded-lg text-center mb-6 w-32 text-lg font-semibold"
+        />
+
+        <button
+          onClick={() => setQuizStarted(true)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition shadow-md"
+        >
+          Start Quiz
+        </button>
+      </div>
+    );
+  }
+
+  // Loading or quiz display
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center h-screen text-lg font-semibold text-gray-600">
@@ -130,12 +157,33 @@ const TimedQuiz = ({ fileId: propFileId }) => {
       </div>
     );
 
+  if (submitted)
+    return (
+      <div className="w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">🎉 Quiz Completed!</h2>
+        <p className="text-lg text-gray-700 mb-2">
+          Score: <span className="font-bold text-blue-600">{score}</span> / {questions.length}
+        </p>
+        <p className="text-lg text-gray-700 mb-6">
+          Accuracy:{" "}
+          <span className="font-bold text-green-600">
+            {((score / questions.length) * 100).toFixed(1)}%
+          </span>
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition"
+        >
+          Retake Quiz
+        </button>
+      </div>
+    );
+
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
   return (
-  <div className="w-screen h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-    {!submitted ? (
+    <div className="w-screen h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
       <div className="w-full h-full flex flex-col items-center justify-between p-8">
         {/* Header */}
         <div className="flex items-center justify-between w-full max-w-5xl">
@@ -233,29 +281,8 @@ const TimedQuiz = ({ fileId: propFileId }) => {
           )}
         </div>
       </div>
-    ) : (
-      <div className="w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">🎉 Quiz Completed!</h2>
-        <p className="text-lg text-gray-700 mb-2">
-          Score: <span className="font-bold text-blue-600">{score}</span> / {questions.length}
-        </p>
-        <p className="text-lg text-gray-700 mb-6">
-          Accuracy:{" "}
-          <span className="font-bold text-green-600">
-            {((score / questions.length) * 100).toFixed(1)}%
-          </span>
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition"
-        >
-          Retake Quiz
-        </button>
-      </div>
-    )}
-  </div>
-);
-
+    </div>
+  );
 };
 
 export default TimedQuiz;

@@ -9,46 +9,51 @@ const StreakMode = ({ fileId: propFileId }) => {
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
 
+  // --- Setup screen states ---
+  const [setupDone, setSetupDone] = useState(false);
+  const [userSelectedNumber, setUserSelectedNumber] = useState(5);
+
+  // --- Quiz states ---
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [selected, setSelected] = useState("");
 
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      if (!fileId) {
-        alert("No study material selected!");
-        setLoading(false);
-        return;
-      }
+  const startQuiz = async () => {
+    if (!fileId) {
+      alert("No study material selected!");
+      return;
+    }
 
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(
-          `http://localhost:5000/api/quiz/generate-from-file/${fileId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ numQuestions: 10 }),
-          }
-        );
+    setLoading(true);
 
-        const data = await res.json();
-        if (data.questions) setQuestions(data.questions);
-      } catch (err) {
-        console.error("Error fetching quiz:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchQuiz();
-  }, [fileId]);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:5000/api/quiz/generate-from-file/${fileId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ numQuestions: userSelectedNumber }),
+        }
+      );
+
+      const data = await res.json();
+      if (data.questions) setQuestions(data.questions);
+      setSetupDone(true);
+    } catch (err) {
+      console.error("Error fetching quiz:", err);
+      alert("Failed to fetch quiz.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAnswer = (index, value) => {
     setSelected(value);
@@ -77,6 +82,35 @@ const StreakMode = ({ fileId: propFileId }) => {
     }, 1200);
   };
 
+  // --- Setup screen ---
+  if (!setupDone) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-orange-100 to-yellow-100 text-center">
+        <h1 className="text-3xl font-bold text-orange-700 mb-6">🔥 Streak Mode Setup</h1>
+        <div className="bg-white shadow-lg p-8 rounded-2xl w-80">
+          <label className="block mb-3 text-gray-700 font-semibold">
+            Number of Questions:
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="50"
+            value={userSelectedNumber}
+            onChange={(e) => setUserSelectedNumber(Number(e.target.value))}
+            className="border-2 border-orange-300 rounded-lg p-2 w-full text-center focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+          <button
+            onClick={startQuiz}
+            disabled={loading}
+            className="mt-5 w-full bg-orange-500 text-white font-semibold py-2 rounded-lg hover:bg-orange-600 transition"
+          >
+            {loading ? "Loading..." : "Start Quiz 🔥"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-lg font-semibold text-orange-600">
@@ -86,6 +120,7 @@ const StreakMode = ({ fileId: propFileId }) => {
 
   const q = questions[currentIndex];
 
+  // --- Main quiz ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 via-yellow-50 to-red-100 flex items-center justify-center px-4 py-10">
       <motion.div
@@ -113,7 +148,10 @@ const StreakMode = ({ fileId: propFileId }) => {
               {streak} 🔥
             </motion.p>
             <p className="text-gray-500 text-sm">
-              Best: <span className="font-semibold text-orange-500">{bestStreak}</span>
+              Best:{" "}
+              <span className="font-semibold text-orange-500">
+                {bestStreak}
+              </span>
             </p>
           </div>
         </div>

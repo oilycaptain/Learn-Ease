@@ -65,6 +65,7 @@ const Quizzes = () => {
   const [view, setView] = useState("config");
   const [studyMaterial, setStudyMaterial] = useState("");
   const [numQuestions, setNumQuestions] = useState(5);
+  const [quizStarted, setQuizStarted] = useState(false);
   const [quizMode, setQuizMode] = useState("standard");
   const [quizTypes, setQuizTypes] = useState([]);
   const [studyMaterials, setStudyMaterials] = useState([]);
@@ -285,29 +286,37 @@ if (view === "type") {
         ))}
 
         {/* --- Timed Mode Extra Setting --- */}
-        {(quizMode === "timed" || quizMode === "standard") && (
-  <div className="mt-6 text-left">
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      ⏱️ Time per Question (in seconds)
-    </label>
-    <input
-      type="number"
-      min="5"
-      max="120"
-      value={timePerQuestion}
-      onChange={(e) => setTimePerQuestion(e.target.value)} // free typing
-      onBlur={(e) => {
-        const val = e.target.value.replace(/^0+/, ""); // remove leading zeros
-        setTimePerQuestion(val ? Number(val) : 5); // default 5 if empty
-      }}
-      placeholder="e.g. 15"
-      className="block w-full px-4 py-3 border rounded-lg"
-    />
-    <p className="text-sm text-gray-500 mt-1">
-      Recommended: 10–60 seconds per question
-    </p>
+        {/* --- Extra Settings for Standard / Timed --- */}
+{(quizMode === "timed" || quizMode === "standard") && (
+  <div className="mt-6 text-left space-y-6">
+    {/* Time per Question */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        ⏱️ Time per Question (in seconds)
+      </label>
+      <input
+        type="number"
+        min="5"
+        max="120"
+        value={timePerQuestion}
+        onChange={(e) => setTimePerQuestion(e.target.value.replace(/^0+/, ""))}
+        onBlur={(e) => {
+          const val = e.target.value.replace(/^0+/, "");
+          setTimePerQuestion(val ? Number(val) : 5);
+        }}
+        placeholder="e.g. 15"
+        className="block w-full px-4 py-3 border rounded-lg"
+      />
+      <p className="text-sm text-gray-500 mt-1">
+        Recommended: 10–60 seconds per question
+      </p>
+    </div>
+
+    {/* Number of Questions */}
+   
   </div>
 )}
+
 
 
         <div className="mt-8 flex justify-between">

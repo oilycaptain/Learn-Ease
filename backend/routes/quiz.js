@@ -21,7 +21,10 @@ if (!GEMINI_API_KEY) {
 router.post('/generate-from-file/:fileId', authMiddleware, async (req, res) => {
   try {
     const { fileId } = req.params;
-    const { numQuestions = 5, quizTypes = [], timePerQuestion = 20 } = req.body;
+    const numQuestions = parseInt(req.body.numQuestions, 10) || 5;
+    const quizTypes = req.body.quizTypes || [];
+    const timePerQuestion = parseInt(req.body.timePerQuestion, 10) || 20;
+
 
     console.log(`Generating quiz for file ${fileId} with ${numQuestions} questions.`);
 
