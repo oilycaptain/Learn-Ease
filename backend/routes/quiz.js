@@ -21,7 +21,10 @@ if (!GEMINI_API_KEY) {
 router.post('/generate-from-file/:fileId', authMiddleware, async (req, res) => {
   try {
     const { fileId } = req.params;
-    const { numQuestions = 5, quizTypes = [] } = req.body;
+    const numQuestions = parseInt(req.body.numQuestions, 10) || 5;
+    const quizTypes = req.body.quizTypes || [];
+    const timePerQuestion = parseInt(req.body.timePerQuestion, 10) || 20;
+
 
     console.log(`Generating quiz for file ${fileId} with ${numQuestions} questions.`);
 
@@ -83,7 +86,11 @@ Each object must have:
     }
 
     // Send back to frontend
-    res.status(200).json({ questions, quizTitle: `Quiz for ${file.originalName}` });
+    res.status(200).json({
+  questions,
+  quizTitle: `Quiz for ${file.originalName}`,
+  timePerQuestion,
+});
 
   } catch (err) {
     console.error('Server error in /generate-from-file:', err);

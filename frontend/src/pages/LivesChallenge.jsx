@@ -9,10 +9,15 @@ const LivesChallenge = ({ fileId: propFileId }) => {
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
 
+  // --- Setup screen ---
+  const [setupDone, setSetupDone] = useState(false);
+  const [userSelectedNumber, setUserSelectedNumber] = useState(5);
+
+  // --- Game states ---
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [lives, setLives] = useState(3);
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
@@ -22,42 +27,41 @@ const LivesChallenge = ({ fileId: propFileId }) => {
   const correctSound = new Audio("/sounds/correct.mp3");
   const wrongSound = new Audio("/sounds/wrong.mp3");
 
-  // Fetch quiz
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      if (!fileId) {
-        alert("No study material selected!");
-        setLoading(false);
-        return;
-      }
+  // --- Start quiz ---
+  const startQuiz = async () => {
+    if (!fileId) {
+      alert("No study material selected!");
+      return;
+    }
 
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          `http://localhost:5000/api/quiz/generate-from-file/${fileId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ numQuestions: 5 }),
-          }
-        );
-        const data = await response.json();
-        if (data.questions) setQuestions(data.questions);
-        else alert("Failed to generate quiz.");
-      } catch (err) {
-        console.error("Error fetching quiz:", err);
-        alert("Error fetching quiz.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/quiz/generate-from-file/${fileId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ numQuestions: userSelectedNumber }),
+        }
+      );
 
-    fetchQuiz();
-  }, [fileId]);
+      const data = await response.json();
+      if (data.questions) setQuestions(data.questions);
+      else alert("Failed to generate quiz.");
+      setSetupDone(true);
+    } catch (err) {
+      console.error("Error fetching quiz:", err);
+      alert("Error fetching quiz.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // --- Handle answers ---
   const handleAnswer = (index, value) => {
     if (submitted || gameOver) return;
 
@@ -77,7 +81,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
 
     setAnswers((prev) => ({ ...prev, [index]: value }));
 
-    // Delay before next question
+    // Move to next question after delay
     setTimeout(() => {
       setFeedback("");
       if (index < questions.length - 1) {
@@ -88,11 +92,41 @@ const LivesChallenge = ({ fileId: propFileId }) => {
     }, 1000);
   };
 
-  // End game when lives = 0
+  // --- End game when lives = 0 ---
   useEffect(() => {
     if (lives <= 0) setGameOver(true);
   }, [lives]);
 
+  // --- Setup screen before quiz ---
+  if (!setupDone) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-blue-100 to-indigo-100 text-center">
+        <h1 className="text-3xl font-bold text-blue-700 mb-6">❤️ Lives Challenge Setup</h1>
+        <div className="bg-white shadow-lg p-8 rounded-2xl w-80 border border-blue-200">
+          <label className="block mb-3 text-gray-700 font-semibold">
+            Number of Questions:
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="50"
+            value={userSelectedNumber}
+            onChange={(e) => setUserSelectedNumber(Number(e.target.value))}
+            className="border-2 border-blue-300 rounded-lg p-2 w-full text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <button
+            onClick={startQuiz}
+            disabled={loading}
+            className="mt-5 w-full bg-blue-500 text-white font-semibold py-2 rounded-lg hover:bg-blue-600 transition"
+          >
+            {loading ? "Loading..." : "Start Challenge ❤️"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Loading state ---
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-lg font-semibold text-gray-700">
@@ -100,6 +134,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
       </div>
     );
 
+  // --- Game over screen ---
   if (gameOver)
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-red-100 to-orange-100 text-center p-6">
@@ -119,6 +154,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
       </div>
     );
 
+  // --- Completed all questions ---
   if (submitted)
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-green-100 to-emerald-100 text-center p-6">
@@ -142,6 +178,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
 
   const q = questions[currentIndex];
 
+  // --- Main quiz view ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-100 to-purple-100 flex items-center justify-center px-4 py-10">
       <motion.div
@@ -152,6 +189,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
         transition={{ duration: 0.4 }}
         className="w-full max-w-2xl bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/40"
       >
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-extrabold text-gray-800 drop-shadow-sm">
             ❤️ Lives Challenge
@@ -183,6 +221,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
           ></div>
         </div>
 
+        {/* Question */}
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           {currentIndex + 1}. {q.question}
         </h3>
@@ -227,6 +266,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
           </div>
         )}
 
+        {/* Feedback */}
         <AnimatePresence>
           {feedback && (
             <motion.p
@@ -241,6 +281,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
           )}
         </AnimatePresence>
 
+        {/* Footer */}
         <div className="mt-6 text-right text-gray-600 font-medium">
           Question {currentIndex + 1} / {questions.length}
         </div>
