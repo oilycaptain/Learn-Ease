@@ -134,10 +134,11 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const seconds = timeLeft % 60;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-2xl bg-white/70 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/40 transition-all duration-300">
+  <div className="w-screen h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+    {!submitted ? (
+      <div className="w-full h-full flex flex-col items-center justify-between p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between w-full max-w-5xl">
           <h1 className="text-3xl font-bold text-gray-800">🧠 Timed Quiz</h1>
           <div className="flex flex-col items-center">
             <span className="text-sm text-gray-600 font-medium">Time Left</span>
@@ -151,113 +152,110 @@ const TimedQuiz = ({ fileId: propFileId }) => {
           </div>
         </div>
 
-        {/* Main Content */}
-        {!submitted ? (
-          <>
-            {questions.length > 0 ? (
-              <div key={currentIndex} className="transition-all duration-300">
-                <div className="p-5 bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-                  <h3 className="font-semibold text-gray-800 mb-4">
-                    {currentIndex + 1}. {questions[currentIndex].question}
-                  </h3>
+        {/* Question Box */}
+        <div className="w-full max-w-4xl bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-white/50 flex-1 flex flex-col justify-between mt-4 mb-6">
+          {questions.length > 0 ? (
+            <>
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-4">
+                  {currentIndex + 1}. {questions[currentIndex].question}
+                </h3>
 
-                  {questions[currentIndex].type === "Multiple Choice" ? (
-                    <div className="space-y-2">
-                      {questions[currentIndex].options.map((opt, idx) => (
-                        <label
-                          key={idx}
-                          className={`flex items-center gap-2 p-2 border rounded-lg cursor-pointer transition ${
-                            answers[currentIndex] === opt
-                              ? "bg-blue-100 border-blue-500"
-                              : "hover:bg-gray-50"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={`question-${currentIndex}`}
-                            value={opt}
-                            checked={answers[currentIndex] === opt}
-                            onChange={() => handleAnswer(currentIndex, opt)}
-                            className="accent-blue-600"
-                          />
-                          <span>{opt}</span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      value={answers[currentIndex] || ""}
-                      onChange={(e) =>
-                        handleAnswer(currentIndex, e.target.value)
-                      }
-                      placeholder="Your answer..."
-                    />
-                  )}
-                </div>
-
-                {/* Navigation Buttons */}
-                <div className="flex justify-between">
-                  <button
-                    onClick={handlePrev}
-                    disabled={currentIndex === 0}
-                    className={`px-5 py-2 rounded-lg font-semibold transition ${
-                      currentIndex === 0
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-gray-200 hover:bg-gray-300"
-                    }`}
-                  >
-                    ← Previous
-                  </button>
-
-                  {currentIndex === questions.length - 1 ? (
-                    <button
-                      onClick={handleSubmit}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md"
-                    >
-                      Submit Quiz
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleNext}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md"
-                    >
-                      Next →
-                    </button>
-                  )}
-                </div>
+                {questions[currentIndex].type === "Multiple Choice" ? (
+                  <div className="space-y-2">
+                    {questions[currentIndex].options.map((opt, idx) => (
+                      <label
+                        key={idx}
+                        className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition ${
+                          answers[currentIndex] === opt
+                            ? "bg-blue-100 border-blue-500"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${currentIndex}`}
+                          value={opt}
+                          checked={answers[currentIndex] === opt}
+                          onChange={() => handleAnswer(currentIndex, opt)}
+                          className="accent-blue-600"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={answers[currentIndex] || ""}
+                    onChange={(e) =>
+                      handleAnswer(currentIndex, e.target.value)
+                    }
+                    placeholder="Your answer..."
+                  />
+                )}
               </div>
-            ) : (
-              <p>No questions available.</p>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-10">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              🎉 Quiz Completed!
-            </h2>
-            <p className="text-lg text-gray-700 mb-2">
-              Score: <span className="font-bold text-blue-600">{score}</span> /{" "}
-              {questions.length}
-            </p>
-            <p className="text-lg text-gray-700 mb-6">
-              Accuracy:{" "}
-              <span className="font-bold text-green-600">
-                {((score / questions.length) * 100).toFixed(1)}%
-              </span>
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition"
-            >
-              Retake Quiz
-            </button>
-          </div>
-        )}
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-6">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentIndex === 0}
+                  className={`px-6 py-3 rounded-lg font-semibold transition ${
+                    currentIndex === 0
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-200 hover:bg-gray-300"
+                  }`}
+                >
+                  ← Previous
+                </button>
+
+                {currentIndex === questions.length - 1 ? (
+                  <button
+                    onClick={handleSubmit}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md"
+                  >
+                    Submit Quiz
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleNext}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md"
+                  >
+                    Next →
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <p>No questions available.</p>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    ) : (
+      <div className="w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">🎉 Quiz Completed!</h2>
+        <p className="text-lg text-gray-700 mb-2">
+          Score: <span className="font-bold text-blue-600">{score}</span> / {questions.length}
+        </p>
+        <p className="text-lg text-gray-700 mb-6">
+          Accuracy:{" "}
+          <span className="font-bold text-green-600">
+            {((score / questions.length) * 100).toFixed(1)}%
+          </span>
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition"
+        >
+          Retake Quiz
+        </button>
+      </div>
+    )}
+  </div>
+);
+
 };
 
 export default TimedQuiz;
