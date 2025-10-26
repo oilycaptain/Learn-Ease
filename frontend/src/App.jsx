@@ -34,21 +34,31 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Protected Routes (Require Login) */}
-        <Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/study-materials" element={<StudyMaterials />} />
-          <Route path="/ask-ai" element={<AskAI />} />
-          <Route path="/quizzes" element={<Quizzes />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/take-quiz" element={<QuizPage />} />
-          <Route path="/quiz/:id" element={<QuizPage />} />
+<Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
+  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/study-materials" element={<StudyMaterials />} />
+  <Route path="/ask-ai" element={<AskAI />} />
+  <Route path="/quizzes" element={<Quizzes />} />
+  <Route path="/analytics" element={<Analytics />} />
+  <Route path="/settings" element={<Settings />} />
+  <Route path="/take-quiz" element={<QuizPage />} />
+  <Route path="/quiz/:id" element={<QuizPage />} />
+</Route>
 
-          {/* Game Modes */}
-          <Route path="/gamemode/timed" element={<TimedQuiz />} />
-          <Route path="/gamemode/lives" element={<LivesChallenge />} />
-          <Route path="/gamemode/streak" element={<StreakMode />} /> {/* 🆕 Streak Mode Route */}
-        </Route>
+{/* ✅ Game Modes (NO SIDEBAR, FULL SCREEN) */}
+<Route
+  path="/gamemode/timed"
+  element={user ? <TimedQuiz /> : <Navigate to="/login" />}
+/>
+<Route
+  path="/gamemode/lives"
+  element={user ? <LivesChallenge /> : <Navigate to="/login" />}
+/>
+<Route
+  path="/gamemode/streak"
+  element={user ? <StreakMode /> : <Navigate to="/login" />}
+/>
+
 
         {/* Catch-All Redirect */}
         <Route path="*" element={<Navigate to="/" />} />

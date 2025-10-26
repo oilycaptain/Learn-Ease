@@ -61,7 +61,7 @@ const Quizzes = () => {
   const API_BASE_URL = "http://localhost:5000";
   const { token } = useAuth();
   const navigate = useNavigate();
-
+  const [timePerQuestion, setTimePerQuestion] = useState(15);
   const [view, setView] = useState("config");
   const [studyMaterial, setStudyMaterial] = useState("");
   const [numQuestions, setNumQuestions] = useState(5);
@@ -159,12 +159,14 @@ const Quizzes = () => {
       };
 
       navigate(routeMap[quizMode], {
-        state: {
-          questions: data.questions,
-          quizTitle: data.quizTitle,
-          fileId: studyMaterial,
-        },
-      });
+  state: {
+    questions: data.questions,
+    quizTitle: data.quizTitle,
+    fileId: studyMaterial,
+    timePerQuestion: quizMode === "timed" ? timePerQuestion : undefined, // 👈 pass the time
+  },
+});
+
     } catch (err) {
       console.error(err);
       showNotification(err.message || "Failed to generate quiz.", "error");
@@ -255,52 +257,80 @@ const Quizzes = () => {
   }
 
   // --- Type Selection Screen ---
-  if (view === "type") {
-    return (
-      <div className="bg-gray-50 flex items-center justify-center p-4 sm:p-8 min-h-full">
-        <div className="w-full max-w-2xl bg-white rounded-2xl p-8 sm:p-12 border border-gray-100 shadow-sm text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Select Quiz Type</h1>
-          <p className="text-gray-600 mt-2">
-            Choose how you want to be tested. You can pick more than one.
-          </p>
+  // --- Type Selection Screen ---
+if (view === "type") {
+  return (
+    <div className="bg-gray-50 flex items-center justify-center p-4 sm:p-8 min-h-full">
+      <div className="w-full max-w-2xl bg-white rounded-2xl p-8 sm:p-12 border border-gray-100 shadow-sm text-center">
+        <h1 className="text-3xl font-bold text-gray-900">Select Quiz Type</h1>
+        <p className="text-gray-600 mt-2">
+          Choose how you want to be tested. You can pick more than one.
+        </p>
 
-          {["Multiple Choice", "Identification", "True or False"].map((type) => (
-            <div
-              key={type}
-              onClick={() => toggleQuizType(type)}
-              className={`cursor-pointer p-4 border-2 rounded-xl flex items-center justify-between mt-4 transition-all ${
-                quizTypes.includes(type)
-                  ? "border-indigo-600 bg-indigo-50"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              <span className="font-semibold text-gray-800">{type}</span>
-              {quizTypes.includes(type) && (
-                <span className="text-indigo-600 font-bold">✓</span>
-              )}
-            </div>
-          ))}
-
-          <div className="mt-8 flex justify-between">
-            <button
-              onClick={() => setView("config")}
-              className="px-6 py-2 border border-gray-300 rounded-lg"
-            >
-              Back
-            </button>
-            <button
-              onClick={handleGenerateQuiz}
-              disabled={isGenerating || quizTypes.length === 0}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg flex items-center"
-            >
-              {isGenerating && <Spinner />}
-              {isGenerating ? "Generating..." : "Generate Quiz"}
-            </button>
+        {["Multiple Choice", "Identification", "True or False"].map((type) => (
+          <div
+            key={type}
+            onClick={() => toggleQuizType(type)}
+            className={`cursor-pointer p-4 border-2 rounded-xl flex items-center justify-between mt-4 transition-all ${
+              quizTypes.includes(type)
+                ? "border-indigo-600 bg-indigo-50"
+                : "border-gray-300 hover:border-gray-400"
+            }`}
+          >
+            <span className="font-semibold text-gray-800">{type}</span>
+            {quizTypes.includes(type) && (
+              <span className="text-indigo-600 font-bold">✓</span>
+            )}
           </div>
+        ))}
+
+        {/* --- Timed Mode Extra Setting --- */}
+        {(quizMode === "timed" || quizMode === "standard") && (
+  <div className="mt-6 text-left">
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      ⏱️ Time per Question (in seconds)
+    </label>
+    <input
+      type="number"
+      min="5"
+      max="120"
+      value={timePerQuestion}
+      onChange={(e) => setTimePerQuestion(e.target.value)} // free typing
+      onBlur={(e) => {
+        const val = e.target.value.replace(/^0+/, ""); // remove leading zeros
+        setTimePerQuestion(val ? Number(val) : 5); // default 5 if empty
+      }}
+      placeholder="e.g. 15"
+      className="block w-full px-4 py-3 border rounded-lg"
+    />
+    <p className="text-sm text-gray-500 mt-1">
+      Recommended: 10–60 seconds per question
+    </p>
+  </div>
+)}
+
+
+        <div className="mt-8 flex justify-between">
+          <button
+            onClick={() => setView("config")}
+            className="px-6 py-2 border border-gray-300 rounded-lg"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleGenerateQuiz}
+            disabled={isGenerating || quizTypes.length === 0}
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg flex items-center"
+          >
+            {isGenerating && <Spinner />}
+            {isGenerating ? "Generating..." : "Generate Quiz"}
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   // --- Default Config View ---
   return (
