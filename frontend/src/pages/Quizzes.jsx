@@ -164,7 +164,8 @@ const Quizzes = () => {
     questions: data.questions,
     quizTitle: data.quizTitle,
     fileId: studyMaterial,
-    timePerQuestion: quizMode === "timed" ? timePerQuestion : undefined, // 👈 pass the time
+    timePerQuestion: quizMode === "timed" ? timePerQuestion : undefined,
+    quizTypes, // 👈 pass the time
   },
 });
 

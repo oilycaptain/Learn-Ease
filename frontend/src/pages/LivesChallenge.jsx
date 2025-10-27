@@ -8,6 +8,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
   const { user } = useAuth();
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
+  const quizTypes = location.state?.quizTypes || []; // 🆕 Get quizTypes from navigation state
 
   // --- Setup screen ---
   const [setupDone, setSetupDone] = useState(false);
@@ -18,13 +19,12 @@ const LivesChallenge = ({ fileId: propFileId }) => {
   const [answers, setAnswers] = useState({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [lives, setLives] = useState(3);
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [feedback, setFeedback] = useState("");
-
-  // 🆕 Modal state for quit confirmation
   const [showQuitModal, setShowQuitModal] = useState(false);
 
   const correctSound = new Audio("/sounds/correct.mp3");
@@ -33,11 +33,13 @@ const LivesChallenge = ({ fileId: propFileId }) => {
   // --- Start quiz ---
   const startQuiz = async () => {
     if (!fileId) {
-      alert("No study material selected!");
+      setError("No study material selected!");
       return;
     }
 
     setLoading(true);
+    setError(null);
+
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -48,17 +50,26 @@ const LivesChallenge = ({ fileId: propFileId }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ numQuestions: userSelectedNumber }),
+          // 🆕 Send both numQuestions and quizTypes
+          body: JSON.stringify({ numQuestions: userSelectedNumber, quizTypes }),
         }
       );
 
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
       const data = await response.json();
-      if (data.questions) setQuestions(data.questions);
-      else alert("Failed to generate quiz.");
-      setSetupDone(true);
+
+      if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+        setQuestions(data.questions);
+        setSetupDone(true);
+      } else {
+        throw new Error("Failed to generate quiz. No questions returned.");
+      }
     } catch (err) {
       console.error("Error fetching quiz:", err);
-      alert("Error fetching quiz.");
+      setError(err.message || "Error fetching quiz.");
     } finally {
       setLoading(false);
     }
@@ -84,7 +95,6 @@ const LivesChallenge = ({ fileId: propFileId }) => {
 
     setAnswers((prev) => ({ ...prev, [index]: value }));
 
-    // Move to next question after delay
     setTimeout(() => {
       setFeedback("");
       if (index < questions.length - 1) {
@@ -95,22 +105,38 @@ const LivesChallenge = ({ fileId: propFileId }) => {
     }, 1000);
   };
 
-  // --- End game when lives = 0 ---
   useEffect(() => {
     if (lives <= 0) setGameOver(true);
   }, [lives]);
 
-  // 🆕 Handle Quit Confirmation
   const handleConfirmQuit = () => {
     setShowQuitModal(false);
-    setGameOver(true); // End the game as if user quit
+    setGameOver(true);
   };
 
-  // --- Setup screen before quiz ---
+  // --- Error display ---
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-red-100 to-orange-100 text-center">
+        <h1 className="text-3xl font-bold text-red-700 mb-4">⚠️ Error</h1>
+        <p className="text-lg text-gray-700 mb-6">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-red-600 text-white px-5 py-3 rounded-xl hover:bg-red-700 transition"
+        >
+          🔁 Retry
+        </button>
+      </div>
+    );
+  }
+
+  // --- Setup screen ---
   if (!setupDone) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-blue-100 to-indigo-100 text-center">
-        <h1 className="text-3xl font-bold text-blue-700 mb-6">❤️ Lives Challenge Setup</h1>
+        <h1 className="text-3xl font-bold text-blue-700 mb-6">
+          ❤️ Lives Challenge Setup
+        </h1>
         <div className="bg-white shadow-lg p-8 rounded-2xl w-80 border border-blue-200">
           <label className="block mb-3 text-gray-700 font-semibold">
             Number of Questions:
@@ -135,7 +161,6 @@ const LivesChallenge = ({ fileId: propFileId }) => {
     );
   }
 
-  // --- Loading state ---
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-lg font-semibold text-gray-700">
@@ -143,7 +168,6 @@ const LivesChallenge = ({ fileId: propFileId }) => {
       </div>
     );
 
-  // --- Game over screen ---
   if (gameOver)
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-red-100 to-orange-100 text-center p-6">
@@ -163,7 +187,6 @@ const LivesChallenge = ({ fileId: propFileId }) => {
       </div>
     );
 
-  // --- Completed all questions ---
   if (submitted)
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-green-100 to-emerald-100 text-center p-6">
@@ -186,12 +209,12 @@ const LivesChallenge = ({ fileId: propFileId }) => {
     );
 
   const q = questions[currentIndex];
+  if (!q) return null;
 
   // --- Main quiz view ---
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-indigo-50 via-blue-100 to-purple-100 flex items-center justify-center px-4 py-10">
-
-      {/* 🆕 Quit button */}
+      {/* Quit button */}
       <button
         onClick={() => setShowQuitModal(true)}
         className="absolute top-6 right-6 bg-red-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-red-700 transition shadow-lg"
@@ -207,7 +230,6 @@ const LivesChallenge = ({ fileId: propFileId }) => {
         transition={{ duration: 0.4 }}
         className="w-full max-w-2xl bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/40"
       >
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-extrabold text-gray-800 drop-shadow-sm">
             ❤️ Lives Challenge
@@ -229,7 +251,6 @@ const LivesChallenge = ({ fileId: propFileId }) => {
           </div>
         </div>
 
-        {/* Progress bar */}
         <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
           <div
             className="bg-blue-500 h-2 rounded-full transition-all duration-500"
@@ -239,7 +260,6 @@ const LivesChallenge = ({ fileId: propFileId }) => {
           ></div>
         </div>
 
-        {/* Question */}
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           {currentIndex + 1}. {q.question}
         </h3>
@@ -252,8 +272,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
                 onClick={() => handleAnswer(currentIndex, opt)}
                 className={`w-full text-left p-3 border-2 rounded-lg transition-all duration-200 ${
                   answers[currentIndex] === opt
-                    ? opt.trim().toLowerCase() ===
-                      q.answer.trim().toLowerCase()
+                    ? opt.trim().toLowerCase() === q.answer.trim().toLowerCase()
                       ? "bg-green-100 border-green-500"
                       : "bg-red-100 border-red-400"
                     : "hover:bg-gray-50 border-gray-300"
@@ -284,7 +303,6 @@ const LivesChallenge = ({ fileId: propFileId }) => {
           </div>
         )}
 
-        {/* Feedback */}
         <AnimatePresence>
           {feedback && (
             <motion.p
@@ -299,13 +317,12 @@ const LivesChallenge = ({ fileId: propFileId }) => {
           )}
         </AnimatePresence>
 
-        {/* Footer */}
         <div className="mt-6 text-right text-gray-600 font-medium">
           Question {currentIndex + 1} / {questions.length}
         </div>
       </motion.div>
 
-      {/* 🆕 Quit Confirmation Modal */}
+      {/* Quit Confirmation Modal */}
       <AnimatePresence>
         {showQuitModal && (
           <motion.div

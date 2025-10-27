@@ -9,6 +9,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const { user } = useAuth();
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
+  const quizTypes = location.state?.quizTypes || [];
 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -40,7 +41,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ numQuestions }),
+            body: JSON.stringify({ numQuestions, quizTypes }),
           }
         );
 
@@ -200,7 +201,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
           onClick={() => window.location.reload()}
           className="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition"
         >
-          Finish
+          Finish 
         </button>
       </div>
     );

@@ -9,6 +9,9 @@ const StreakMode = ({ fileId: propFileId }) => {
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
 
+  // ✅ Include quizTypes from navigation state (coming from Quizzes.jsx)
+  const quizTypes = location.state?.quizTypes || [];
+
   // --- Setup and quiz states ---
   const [setupDone, setSetupDone] = useState(false);
   const [userSelectedNumber, setUserSelectedNumber] = useState(5);
@@ -40,7 +43,8 @@ const StreakMode = ({ fileId: propFileId }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ numQuestions: userSelectedNumber }),
+          // ✅ Pass quizTypes along with numQuestions
+          body: JSON.stringify({ numQuestions: userSelectedNumber, quizTypes }),
         }
       );
 
