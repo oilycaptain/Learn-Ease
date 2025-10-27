@@ -9,11 +9,9 @@ const StreakMode = ({ fileId: propFileId }) => {
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
 
-  // --- Setup screen states ---
+  // --- Setup and quiz states ---
   const [setupDone, setSetupDone] = useState(false);
   const [userSelectedNumber, setUserSelectedNumber] = useState(5);
-
-  // --- Quiz states ---
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -21,7 +19,10 @@ const StreakMode = ({ fileId: propFileId }) => {
   const [bestStreak, setBestStreak] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [selected, setSelected] = useState("");
+  const [quizEnded, setQuizEnded] = useState(false);
+  const [showQuitModal, setShowQuitModal] = useState(false);
 
+  // --- Start Quiz ---
   const startQuiz = async () => {
     if (!fileId) {
       alert("No study material selected!");
@@ -29,7 +30,6 @@ const StreakMode = ({ fileId: propFileId }) => {
     }
 
     setLoading(true);
-
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
@@ -55,7 +55,9 @@ const StreakMode = ({ fileId: propFileId }) => {
     }
   };
 
+  // --- Handle Answer ---
   const handleAnswer = (index, value) => {
+    if (!value.trim()) return;
     setSelected(value);
     const q = questions[index];
     const correct =
@@ -77,12 +79,33 @@ const StreakMode = ({ fileId: propFileId }) => {
       if (index < questions.length - 1) {
         setCurrentIndex((i) => i + 1);
       } else {
-        alert(`🔥 Quiz complete! Best Streak: ${bestStreak}`);
+        handleEndQuiz();
       }
-    }, 1200);
+    }, 1000);
   };
 
-  // --- Setup screen ---
+  // --- End or Quit Quiz ---
+  const handleEndQuiz = () => setQuizEnded(true);
+  const handleRestart = () => window.location.reload();
+
+  // --- ENTER key submit handler ---
+  useEffect(() => {
+    const listener = (e) => {
+      if (e.key === "Enter" && !showQuitModal && !quizEnded && setupDone) {
+        const q = questions[currentIndex];
+        if (q.type !== "Multiple Choice") {
+          const input = document.querySelector("#streak-answer-input");
+          if (input && input.value.trim()) {
+            handleAnswer(currentIndex, input.value);
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, [questions, currentIndex, showQuitModal, quizEnded, setupDone]);
+
+  // --- Setup Screen ---
   if (!setupDone) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-orange-100 to-yellow-100 text-center">
@@ -118,11 +141,46 @@ const StreakMode = ({ fileId: propFileId }) => {
       </div>
     );
 
+  // --- End Screen ---
+  if (quizEnded) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-orange-100 to-yellow-100">
+        <h2 className="text-3xl font-bold text-orange-700 mb-4">🏁 Streak Mode Finished!</h2>
+        <p className="text-lg text-gray-700 mb-2">
+          Best Streak: <span className="font-bold text-orange-600">{bestStreak}</span>
+        </p>
+        <p className="text-gray-600 mb-6">Total Questions: {questions.length}</p>
+        <div className="flex gap-4">
+          <button
+            onClick={handleRestart}
+            className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition"
+          >
+            🔁 Restart
+          </button>
+          <button
+            onClick={() => window.history.back()}
+            className="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition"
+          >
+            ⬅ Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const q = questions[currentIndex];
 
-  // --- Main quiz ---
+  // --- Main Quiz UI ---
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-yellow-50 to-red-100 flex items-center justify-center px-4 py-10">
+    <div className="relative min-h-screen bg-gradient-to-br from-orange-100 via-yellow-50 to-red-100 flex items-center justify-center px-4 py-10">
+      {/* Top-Right Quit Button */}
+      <button
+        onClick={() => setShowQuitModal(true)}
+        className="absolute top-5 right-5 bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-700 transition"
+      >
+        🚪 Quit
+      </button>
+
       <motion.div
         key={currentIndex}
         initial={{ opacity: 0, y: 40 }}
@@ -136,7 +194,7 @@ const StreakMode = ({ fileId: propFileId }) => {
           <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-2">
             🔥 Streak Mode
           </h1>
-          <div className="text-right">
+          <div className="flex flex-col items-end">
             <motion.p
               key={streak}
               initial={{ scale: 0.8, opacity: 0 }}
@@ -148,10 +206,7 @@ const StreakMode = ({ fileId: propFileId }) => {
               {streak} 🔥
             </motion.p>
             <p className="text-gray-500 text-sm">
-              Best:{" "}
-              <span className="font-semibold text-orange-500">
-                {bestStreak}
-              </span>
+              Best: <span className="font-semibold text-orange-500">{bestStreak}</span>
             </p>
           </div>
         </div>
@@ -195,10 +250,10 @@ const StreakMode = ({ fileId: propFileId }) => {
             </div>
           ) : (
             <input
+              id="streak-answer-input"
               type="text"
               className="w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
-              onBlur={(e) => handleAnswer(currentIndex, e.target.value)}
-              placeholder="Type your answer..."
+              placeholder="Type your answer and press Enter..."
             />
           )}
         </motion.div>
@@ -212,9 +267,7 @@ const StreakMode = ({ fileId: propFileId }) => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               className={`text-center text-lg font-semibold mt-2 ${
-                feedback.includes("Correct")
-                  ? "text-green-600"
-                  : "text-red-600"
+                feedback.includes("Correct") ? "text-green-600" : "text-red-600"
               }`}
             >
               {feedback}
@@ -223,10 +276,50 @@ const StreakMode = ({ fileId: propFileId }) => {
         </AnimatePresence>
 
         {/* Footer */}
-        <div className="text-right text-gray-600 font-medium mt-6">
+        <div className="text-gray-600 font-medium text-center mt-6">
           Question {currentIndex + 1} / {questions.length}
         </div>
       </motion.div>
+
+      {/* --- Quit Confirmation Modal --- */}
+      <AnimatePresence>
+        {showQuitModal && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-2xl shadow-2xl p-8 w-80 text-center"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+            >
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                Quit Challenge?
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to end your streak challenge?
+              </p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={handleEndQuiz}
+                  className="bg-red-500 text-white px-5 py-2 rounded-lg hover:bg-red-600 transition"
+                >
+                  Yes, Quit
+                </button>
+                <button
+                  onClick={() => setShowQuitModal(false)}
+                  className="bg-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-400 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

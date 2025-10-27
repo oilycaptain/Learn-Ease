@@ -24,6 +24,9 @@ const LivesChallenge = ({ fileId: propFileId }) => {
   const [gameOver, setGameOver] = useState(false);
   const [feedback, setFeedback] = useState("");
 
+  // 🆕 Modal state for quit confirmation
+  const [showQuitModal, setShowQuitModal] = useState(false);
+
   const correctSound = new Audio("/sounds/correct.mp3");
   const wrongSound = new Audio("/sounds/wrong.mp3");
 
@@ -97,6 +100,12 @@ const LivesChallenge = ({ fileId: propFileId }) => {
     if (lives <= 0) setGameOver(true);
   }, [lives]);
 
+  // 🆕 Handle Quit Confirmation
+  const handleConfirmQuit = () => {
+    setShowQuitModal(false);
+    setGameOver(true); // End the game as if user quit
+  };
+
   // --- Setup screen before quiz ---
   if (!setupDone) {
     return (
@@ -141,7 +150,7 @@ const LivesChallenge = ({ fileId: propFileId }) => {
         <h1 className="text-5xl font-extrabold text-red-600 mb-4 animate-pulse">
           💀 Game Over!
         </h1>
-        <p className="text-lg text-gray-700 mb-2">You lost all your lives.</p>
+        <p className="text-lg text-gray-700 mb-2">You lost all your lives or quit the game.</p>
         <p className="text-xl font-semibold text-gray-900 mb-6">
           Final Score: {score} / {questions.length}
         </p>
@@ -180,7 +189,16 @@ const LivesChallenge = ({ fileId: propFileId }) => {
 
   // --- Main quiz view ---
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-100 to-purple-100 flex items-center justify-center px-4 py-10">
+    <div className="relative min-h-screen bg-gradient-to-br from-indigo-50 via-blue-100 to-purple-100 flex items-center justify-center px-4 py-10">
+
+      {/* 🆕 Quit button */}
+      <button
+        onClick={() => setShowQuitModal(true)}
+        className="absolute top-6 right-6 bg-red-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-red-700 transition shadow-lg"
+      >
+        ✖ Quit Challenge
+      </button>
+
       <motion.div
         key={currentIndex}
         initial={{ opacity: 0, y: 40 }}
@@ -286,6 +304,47 @@ const LivesChallenge = ({ fileId: propFileId }) => {
           Question {currentIndex + 1} / {questions.length}
         </div>
       </motion.div>
+
+      {/* 🆕 Quit Confirmation Modal */}
+      <AnimatePresence>
+        {showQuitModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl p-8 shadow-2xl text-center max-w-sm w-full"
+            >
+              <h2 className="text-xl font-bold text-gray-800 mb-3">
+                Quit Challenge?
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to quit? Your progress will be lost.
+              </p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={handleConfirmQuit}
+                  className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 transition"
+                >
+                  Yes, Quit
+                </button>
+                <button
+                  onClick={() => setShowQuitModal(false)}
+                  className="bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-400 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

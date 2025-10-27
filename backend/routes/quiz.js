@@ -25,8 +25,7 @@ router.post('/generate-from-file/:fileId', authMiddleware, async (req, res) => {
     const quizTypes = req.body.quizTypes || [];
     const timePerQuestion = parseInt(req.body.timePerQuestion, 10) || 20;
 
-
-    console.log(`Generating quiz for file ${fileId} with ${numQuestions} questions.`);
+    console.log(`Generating quiz for file ${fileId} with types:`, quizTypes);
 
     // Fetch file content
     const file = await File.findOne({ _id: fileId, user: req.user._id });
@@ -37,23 +36,29 @@ router.post('/generate-from-file/:fileId', authMiddleware, async (req, res) => {
     // Limit text length
     const materialText = file.extractedText.substring(0, 15000);
 
-    // Construct prompt
+    // ✅ Strict prompt to only generate selected types
     const prompt = `
-Generate ${numQuestions} quiz questions from the following study material:
+You are a quiz generator. Generate exactly ${numQuestions} quiz questions from the text below.
+Only include these question types: ${quizTypes.length > 0 ? quizTypes.join(", ") : "Multiple Choice"}.
+❌ Do NOT include any other types like True or False or Identification unless listed.
+Return the output ONLY as a valid JSON array, no explanations.
+
+Each question object must have:
+{
+  "question": "string",
+  "type": "one of: ${quizTypes.join(", ")}",
+  "options": ["A", "B", "C", "D"] // only for Multiple Choice
+  "answer": "string"
+}
+
+Study Material:
 ---
 ${materialText}
 ---
-Include ${quizTypes.length > 0 ? quizTypes.join(", ") : "various"} question types.
-Format the response *only* as a valid JSON array of objects, starting with [ and ending with ].
-Each object must have:
-- "question": string
-- "type": string ("Multiple Choice", "Identification", "True or False")
-- "options": array (only for Multiple Choice)
-- "answer": string
 `;
 
-    // Call Google Gemini API
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+    // Gemini API request
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${process.env.GEMINI_API_KEY}`;
     const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
     const apiResponse = await fetch(apiUrl, {
@@ -75,28 +80,38 @@ Each object must have:
       return res.status(500).json({ message: 'The AI returned an empty or invalid response.' });
     }
 
-    // Clean and parse JSON
+    // Clean and parse JSON safely
     let questions = [];
     try {
       const cleanedJson = aiText.replace(/```json|```/g, '').trim();
       questions = JSON.parse(cleanedJson);
+
+      // ✅ Filter to ensure only selected types remain
+      if (quizTypes.length > 0) {
+        questions = questions.filter(q => quizTypes.includes(q.type));
+      }
+
     } catch (err) {
       console.error("Error parsing AI JSON:", err);
-      return res.status(500).json({ message: 'Failed to parse quiz questions from AI response.', raw: aiText });
+      return res.status(500).json({
+        message: 'Failed to parse quiz questions from AI response.',
+        raw: aiText,
+      });
     }
 
-    // Send back to frontend
+    // Return result
     res.status(200).json({
-  questions,
-  quizTitle: `Quiz for ${file.originalName}`,
-  timePerQuestion,
-});
+      questions,
+      quizTitle: `Quiz for ${file.originalName}`,
+      timePerQuestion,
+    });
 
   } catch (err) {
     console.error('Server error in /generate-from-file:', err);
     res.status(500).json({ message: 'Server error generating quiz.', error: err.message });
   }
 });
+
 
 // -------------------------
 // POST /api/quiz/submit
