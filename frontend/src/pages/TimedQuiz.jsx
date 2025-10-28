@@ -2,14 +2,15 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import api from "../utils/api";
 
 const TimedQuiz = ({ fileId: propFileId }) => {
   const { user } = useAuth();
   const location = useLocation();
   const fileId = location.state?.fileId || propFileId;
+  const quizTypes = location.state?.quizTypes || [];
 
-  // 🧠 States
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(20);
@@ -17,16 +18,14 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // 🆕 User setup states
   const [numQuestions, setNumQuestions] = useState(5);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [showQuitModal, setShowQuitModal] = useState(false);
 
-  // ✅ Load sound effects
   const correctSound = new Audio("/sounds/correct.mp3");
   const wrongSound = new Audio("/sounds/wrong.mp3");
 
-  // Fetch quiz (when user starts)
+  // Fetch quiz from backend
   useEffect(() => {
     if (!quizStarted || !fileId) return;
 
@@ -42,7 +41,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ numQuestions }),
+            body: JSON.stringify({ numQuestions, quizTypes }),
           }
         );
 
@@ -113,7 +112,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     }
   };
 
-  // 🆕 Updated handleSubmit — with auto-save to backend
+  // ✅ Submit & Save Quiz
   const handleSubmit = async () => {
     let scoreCount = 0;
     questions.forEach((q, i) => {
@@ -125,21 +124,20 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     setScore(scoreCount);
     setSubmitted(true);
 
-    // 🧩 Save quiz record to backend
     try {
       const token = localStorage.getItem("token");
       await api.post(
-  "/quiz/submit",
-  {
-    quizId: fileId, // optional: if you don't have a Quiz collection
-    quizTitle: `Quiz for ${fileId}`, // or get actual file name
-    score: scoreCount,
-    totalQuestions: questions.length
-  },
-  {
-    headers: { Authorization: `Bearer ${token}` },
-  }
-);
+        "/quiz/submit",
+        {
+          quizId: fileId,
+          quizTitle: `Quiz for ${fileId}`,
+          score: scoreCount,
+          totalQuestions: questions.length,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       console.log("✅ Quiz saved successfully!");
     } catch (err) {
@@ -147,7 +145,13 @@ const TimedQuiz = ({ fileId: propFileId }) => {
     }
   };
 
-  // 🆕 Quiz setup screen
+  // 🆕 Custom Quit Confirmation Modal
+  const handleQuitConfirm = () => {
+    setShowQuitModal(false);
+    handleSubmit();
+  };
+
+  // Quiz setup screen
   if (!quizStarted) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -197,7 +201,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
           onClick={() => window.location.reload()}
           className="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition"
         >
-          Retake Quiz
+          Finish 
         </button>
       </div>
     );
@@ -206,7 +210,15 @@ const TimedQuiz = ({ fileId: propFileId }) => {
   const seconds = timeLeft % 60;
 
   return (
-    <div className="w-screen h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+    <div className="relative w-screen h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      {/* 🆕 Quit Quiz button */}
+      <button
+        onClick={() => setShowQuitModal(true)}
+        className="absolute top-6 right-6 bg-red-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-red-700 transition shadow-lg"
+      >
+        ✖ Quit Quiz
+      </button>
+
       <div className="w-full h-full flex flex-col items-center justify-between p-8">
         {/* Header */}
         <div className="flex items-center justify-between w-full max-w-5xl">
@@ -267,7 +279,7 @@ const TimedQuiz = ({ fileId: propFileId }) => {
               </div>
 
               {/* Navigation Buttons */}
-              <div className="flex justify-between mt-6">
+              <div className="flex justify-between mt-6 items-center">
                 <button
                   onClick={handlePrev}
                   disabled={currentIndex === 0}
@@ -302,6 +314,47 @@ const TimedQuiz = ({ fileId: propFileId }) => {
           )}
         </div>
       </div>
+
+      {/* 🆕 Quit Confirmation Modal */}
+      <AnimatePresence>
+        {showQuitModal && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-2xl p-6 text-center shadow-xl max-w-sm w-full"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                Quit Quiz?
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to quit? Your current progress will be submitted.
+              </p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setShowQuitModal(false)}
+                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleQuitConfirm}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                >
+                  Yes, Quit
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
